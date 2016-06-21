@@ -2,12 +2,21 @@
 
 const mCfg = module.exports = {};
 const Sequelize = require('sequelize');
-const cfg = require('../config/config');
+const cfg = require('./config');
+const logger = require('../utils/logUtils');
+const moment = require('moment-timezone');
+
+mCfg.timeZone = 'Asia/Bangkok';
+// mCfg.timeFormat = cfg.timeFormat;
 
 //**** Connect mySQL ****
 mCfg.sequelize = new Sequelize(cfg.dbName, cfg.dbUser, cfg.dbPwd, {
-  dialect: 'mysql',
-  host: cfg.dbHost,
+	timezone:'+07:00',
+	logging: logger.db,
+	// logging: console.log,
+	// logging: false,
+	dialect: 'mysql',
+	host: cfg.dbHost,
 //   host: '10.252.176.111',
 //**** Connect msSQL ****
 // config.sequelize = new Sequelize('BMSDB', 'bmsadmin', 'P@ssw0rd', {
@@ -16,12 +25,14 @@ mCfg.sequelize = new Sequelize(cfg.dbName, cfg.dbUser, cfg.dbPwd, {
 // 	port: 1433,
 
 	protocol: 'tcp',
-
 	// dialectOptions: {insecureAuth: true}, //Only need for pc connect
-
 	pool: {
-	max: 5,
-	min: 0,
-	idle: 10000,
+		max: cfg.poolMax,
+		min: 0,
+		idle: 10000,
 	}
 });
+
+mCfg.correctTime = (varDate) => {
+	return moment(varDate).tz(mCfg.timeZone).format(cfg.timeFormat);
+};

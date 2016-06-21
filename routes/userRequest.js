@@ -6,12 +6,12 @@ const util = require('../utils/bmsUtils');
 const error = require('../config/error');
 // const mContract = require('../models/mContract');
 const mUR = require('../models/mUR');
-const mUrWf = require('../models/mUrWorkflow');
+const mUrWf = require('../models/mUrWorkFlow');
 const cfg = require('../config/config');
 
 const userRequest = {
 
-  approval: (req, res) => {
+  updateStatus: (req, res) => {
     try{
       console.log(chalk.green('=========== Approval UR ==========='));
       console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body, undefined, 2)));
@@ -21,7 +21,7 @@ const userRequest = {
         .then((succeed) => {
           console.log('Save Result : ' + chalk.green(succeed));
           console.log('Save Data : ' + chalk.blue(JSON.stringify(succeed, undefined, 2)));
-          const jWhere = { UR_ID: req.body.requestData.urId};
+          const jWhere = { urId: req.body.requestData.urId};
           mUR.findOne({where:jWhere}).then((db) => {
             console.log('UR => ' + chalk.blue(JSON.stringify(db)));
             if(util.chkDataFound(db)) {
@@ -77,7 +77,7 @@ const userRequest = {
     try{
       console.log(chalk.green('=========== Edit UR ==========='));
       console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body, undefined, 2)));
-      const jWhere = { UR_ID: req.body.requestData.urId};
+      const jWhere = { urId: req.body.requestData.urId};
       console.log('jWhere typeof : ' + chalk.blue(typeof jWhere));
       console.log('jWhere : '+chalk.blue(JSON.stringify(jWhere)));
 
@@ -112,7 +112,7 @@ const userRequest = {
       console.log(chalk.green('=========== Delete UR ==========='));
       // console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body, undefined, 2)));
       // const jWhere = { UR_ID: req.body.requestData.userid};
-      const jWhere = { UR_ID: req.params.urId};
+      const jWhere = { urId: req.params.urId};
       console.log('jWhere typeof : ' + chalk.blue(typeof jWhere));
       console.log('jWhere : '+chalk.blue(JSON.stringify(jWhere)));
 
@@ -191,7 +191,7 @@ const userRequest = {
       console.log(chalk.green('=========== Query UR By Criteria ==========='));
       console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body.requestData, undefined, 2)));
 
-      if(util.chkDataFound(req.body.requestData)){
+      if(util.chkDataFound(req.body)){
         mUR.findAll({where:req.body.requestData}).then((db) => {
           console.log('rows.count: ' + chalk.blue(db.length));
           if(util.chkDataFound(db)) res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000,{"userRequestList":db}));
@@ -210,12 +210,12 @@ const userRequest = {
   queryById: (req, res) => {
     try{
       console.log(chalk.green('=========== Query UR By Id ==========='));
-      console.log('Request URL : ' + chalk.blue(req.url)); // /userRequestById?UR_ID=111
-      console.log('req.params.urId : ' + chalk.blue(req.params.urId)); // /userRequestById?UR_ID=111
+      console.log('Request URL : ' + chalk.blue(req.url)); // /userRequestById/UR_ID=111
+      console.log('req.params.urId : ' + chalk.blue(req.params.urId)); // /userRequestById/UR_ID=111
 
-      const jWhere = { UR_ID: req.params.urId};
+      const jWhere = { urId: req.params.urId};
       // mUR.findOne({where:jWhere, include:[{model:mUrWf, where: { urStatus: 'DM_APPROVAL' }}]}).then((db) => {
-      mUR.findOne({where:jWhere, include:[{model:mUrWf,attributes: ['wfId', 'urStatus','approvalBy','approvalDate']}]}).then((db) => {
+      mUR.findOne({where:jWhere, include:[{model:mUrWf,attributes:['wfId', 'urStatus','updateBy','updateTime','remark']}]}).then((db) => {
         console.log('UR : '+chalk.blue(JSON.stringify(db)));
         // console.log('UR typeof : ' + chalk.blue(typeof db));
         // console.log('db: ' + chalk.blue(db));

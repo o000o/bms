@@ -21,6 +21,8 @@ config.dbName = 'bldgdev';
 config.dbUser = 'admin';
 config.dbPwd = 'P@ssw0rd';
 config.dbHost = '10.252.163.130';
+config.timeFormat = 'YYYY-MM-DD HH:mm:ss';
+config.poolMax = 5;
 
 // Cors
 config.origin = '*';

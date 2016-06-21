@@ -1,6 +1,9 @@
-var fs = require('fs');
-var os = require("os");
-var logCfg = require('../config/config');
+'use strict'
+
+const fs = require('fs');
+const os = require("os");
+const logCfg = require('../config/config');
+const util = require('../utils/bmsUtils');
 
 var exports = module.exports = {};
 
@@ -70,22 +73,65 @@ function getLogFileName()
     return os.hostname()+'_'+logCfg.log.projectName+'_'+getDateTimeFormat()+'.log';
 }
 
-exports.info = function (logMessage)
+function getLogHeader(logStatus,reqData) //${LogTime}|${hostname}|${appname}|INCOMING|Token|COMMAMD|Data|...
 {
-    var stream = fs.createWriteStream(logCfg.log.logPath+'/'+getLogFileName(), {'flags': 'a'});
-    stream.once('open', function(fd) {
-        stream.write(getDateTimeLogFormat()+' - info: '+logMessage+'\n');
+    let strHead = getDateTimeFormat()+'|'+os.hostname()+logCfg.log.projectName+'|'+logStatus;
+    
+    if(reqData!=null && reqData!=''){
+        // strHead = strHead + '|'+reqData.path+ '|IP:'+reqData.ip+'|'+reqData.originalUrl;
+        strHead = strHead + '|'+reqData.method +'|API:'+reqData.url+'|USER:' + util.getUserName(reqData.header('x-userTokenId'));
+    }
+    return strHead;
+}
+
+function writeLog(namePath,logMessage) //${LogTime}|${hostname}|${appname}|INCOMING|Token|COMMAMD|Data|...
+{
+    var stream = fs.createWriteStream(namePath, {'flags': 'a'});
+    stream.once('open', (fd) => {
+        stream.write(logMessage+'\n');
         stream.end();
     });
+}
+
+exports.info = (reqData, errMsg) =>
+{//${LogTime}|${hostname}|${appname}|INFO|Token|COMMAMD|Data|...
+    let error = '';
+    if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
+    let logMsg = getLogHeader('INFO',reqData)+error;
+    writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg);
 };
 
-exports.error = function(logMessage)
-{
-    var stream = fs.createWriteStream(logCfg.log.logPath+'/'+getLogFileName(), {'flags': 'a'});
+exports.error = (reqData, errMsg) =>
+{//${LogTime}|${hostname}|${appname}|ERROR|Token|COMMAMD|Data|...
+    let error = '';
+    if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
+    let logMsg = getLogHeader('ERROR',reqData)+error;
+    writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg);
+};
 
-    stream.once('open', function(fd) {
-        stream.write(getDateTimeLogFormat()+' - error: '+logMessage+'\n');
-                stream.end();
-    });
+exports.incoming = (reqData, errMsg) =>
+{//${LogTime}|${hostname}|${appname}|INCOMING|Token|COMMAMD|Data|...
+    let error = '';
+    if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|ERROR:'+errMsg
+    let logMsg = getLogHeader('INCOMING',reqData)+error;
+    writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg);
+};
+
+exports.summary = (reqData, errMsg) =>
+{//${LogTime}|${hostname}|${appname}|SUMMARY|Token|InTime|OutTime|DiffTime|INPUT|OUTPUT|STATUS|ResultCode|ResultDesc
+    let error = '';
+    if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
+    let logMsg = getLogHeader('SUMMARY',reqData)+error;
+    writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg);
+};
+
+exports.db = (reqData) =>
+{
+    // var stream = fs.createWriteStream(logCfg.log.logPath+'/db/'+getLogFileName(), {'flags': 'a'});
+    // stream.once('open', (fd) => {
+    //     stream.write(getDateTimeLogFormat()+' - DB: '+reqData+'\n');
+    //     stream.end();
+    // });
+    writeLog(logCfg.log.logPath+'/db/'+getLogFileName(),getLogHeader()+'|DB|'+reqData);
 };
 

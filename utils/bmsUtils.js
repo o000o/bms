@@ -54,7 +54,7 @@ const utils = {
 		    let userTokenId = jwt.encode({
 		      // userId: data._id,
 		      userName: data.userName,
-		      password: data.password,
+		      // password: data.password,
 		      // userGroupId: data.userGroupId,
 		      exp: expire
 		    }, shhh());
@@ -65,24 +65,6 @@ const utils = {
 
 	},
 
-	// getUserId: (token) => {
-	// 	try {
-	// 		const decoded = jwt.decode(token, shhh());
-	// 	    return decoded.userId;
-	// 	}catch (err){
-	// 		return err.message;
-	// 	}
-	// },
-
-	// getUserGroupId: (token) => {
-	// 	try {
-	// 		const decoded = jwt.decode(token, shhh());
-	// 	    return decoded.userGroupId;
-	// 	}catch (err){
-	// 		return err.message;
-	// 	}
-	// },
-
 	getUserName: (token) => {
 		try {
 			const decoded = jwt.decode(token, shhh());
@@ -92,14 +74,14 @@ const utils = {
 		}
 	},
 
-	getPassword: (token) => {
-		try {
-			const decoded = jwt.decode(token, shhh());
-		    return decoded.password;
-		}catch (err){
-			return err.message;
-		}
-	},
+	// getPassword: (token) => {
+	// 	try {
+	// 		const decoded = jwt.decode(token, shhh());
+	// 	    return decoded.password;
+	// 	}catch (err){
+	// 		return err.message;
+	// 	}
+	// },
 
 	getExpireTime: (token) => {
 		try {

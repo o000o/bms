@@ -3,25 +3,21 @@ const Sequelize = require('sequelize');
 const mCfg = require('../config/modelCfg');
 // const mVendorProfile = require('./mVendorProfile');
 
-const mVendorProfileContact = mCfg.sequelize.define('vendor_profile_contact', {
-	vendorContactId: { type: Sequelize.INTEGER, field: 'VENDOR_CONTACT_ID', primaryKey: true, autoIncrement: true, allowNull: false},
-	vendorId: { type: Sequelize.INTEGER, field: 'VENDOR_ID', allowNull: false},
-	vendorName: { type: Sequelize.STRING, field: 'VENDOR_NAME', allowNull: true},
-	buildingName: { type: Sequelize.STRING, field: 'BUILDING_NAME', allowNull: true },
-	buildingNo: { type: Sequelize.STRING, field: 'BUILDING_NO', allowNull: true},
-	floor: { type: Sequelize.STRING, field: 'FLOOR', allowNull: true},
+const mBuildingArea = mCfg.sequelize.define('building_area', {
+	baId: { type: Sequelize.INTEGER, field: 'BA_ID', primaryKey: true, autoIncrement: true, allowNull: false},
+	buildingId: { type: Sequelize.INTEGER, field: 'BUILDING_ID', allowNull: false},
+	contractId: { type: Sequelize.STRING, field: 'CONTRACT_ID', allowNull: false},
+	areaName: { type: Sequelize.STRING, field: 'AREA_NAME', allowNull: false },
+	floor: { type: Sequelize.STRING, field: 'FLOOR', allowNull: false},
 	homeNo: { type: Sequelize.STRING, field: 'HOME_NO', allowNull: true},
-	road: { type: Sequelize.STRING, field: 'ROAD', allowNull: false},
-	tumbol: { type: Sequelize.STRING, field: 'TUMBOL', allowNull: false},
-	amphur: { type: Sequelize.STRING, field: 'AMPHUR', allowNull: false},
-	province: { type: Sequelize.STRING, field: 'PROVINCE', allowNull: false},
-	postalCode: { type: Sequelize.STRING, field: 'POSTAL_CODE', allowNull: true},
-	landline: { type: Sequelize.STRING, field: 'LANDLINE', allowNull: false},
-	mobileNo: { type: Sequelize.STRING, field: 'MOBILE_NO', allowNull: true},
-	fax: { type: Sequelize.STRING, field: 'FAX', allowNull: true},
-	email: { type: Sequelize.STRING, field: 'EMAIL', allowNull: false}
+	meetingRoom: { type: Sequelize.INTEGER, field: 'MEETING_ROOM', allowNull: true},
+	menToilet: { type: Sequelize.INTEGER, field: 'MEN_TOILET', allowNull: true},
+	womenToilet: { type: Sequelize.INTEGER, field: 'WOMEN_TOILET', allowNull: true},
+	areaSize: { type: Sequelize.INTEGER, field: 'AREA_SIZE', allowNull: false},
+	unitArea: { type: Sequelize.STRING, field: 'UNIT_AREA', allowNull: false},
+	empTotal: { type: Sequelize.INTEGER, field: 'EMP_TOTAL', allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
 // mVendorProfileContact.belongsTo(mVendorProfile, {foreignKey:'VENDOR_ID'});
 
-module.exports = mVendorProfileContact;
+module.exports = mBuildingArea;

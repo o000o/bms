@@ -1,6 +1,7 @@
 'use strict'
 const Sequelize = require('sequelize');
 const mCfg = require('../config/modelCfg');
+const mVendorPC = require('./mVendorProfileContact');
 
 // const mVendorProfile = cfg.sequelize.define('VENDOR_PROFILE', {
 const mVendorProfile = mCfg.sequelize.define('vendor_profile', {
@@ -23,5 +24,7 @@ const mVendorProfile = mCfg.sequelize.define('vendor_profile', {
 	fax: { type: Sequelize.STRING, field: 'FAX', allowNull: true},
 	email: { type: Sequelize.STRING, field: 'EMAIL', allowNull: false}
 },{freezeTableName: true, timestamps: false});
+
+mVendorProfile.hasMany(mVendorPC, { foreignKey:'VENDOR_ID' });
 
 module.exports = mVendorProfile;
