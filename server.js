@@ -77,7 +77,7 @@ app.use((err, req, res, next) => {
 //=====HTTP=====
 app.listen(cfg.https.port, () => {
   console.log(chalk.green("Server listen on : " + cfg.https.port));
-  logger.info(null,"Server listen on : " + cfg.https.port);
+  logger.info(null,"======>Server listen on : " + cfg.https.port);
 });
 //=====HTTP 2=====
 // const http = require('http');

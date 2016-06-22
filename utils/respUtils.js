@@ -45,5 +45,5 @@ exports.getSuccess = (reqObj,resObj,cmd,err) => {
 	logger.summary(reqObj,cmd+'|'+'Success');
 	if(err!=null)resObj.status(err.status || 200);
 	else resObj.status(200);
-    resObj.json(this.getJsonError(error.code_00000, error.desc_00000, err));
+    resObj.json(this.getJsonSuccess(error.code_00000, error.desc_00000, err));
 }

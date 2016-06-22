@@ -31,7 +31,7 @@ try{
       const jWhere = { userName: req.body.requestData.userName, password: req.body.requestData.password};
       // console.log('jWhere typeof : ' + chalk.blue(typeof jWhere));
       // console.log('jWhere : '+chalk.blue(JSON.stringify(jWhere)));
-      cmd = 'chkUser';
+      cmd = 'chkUserAuth';
       logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
       mUser.findOne({where:jWhere}).then((user) => {
         // console.log('user : '+chalk.blue(JSON.stringify(user)));

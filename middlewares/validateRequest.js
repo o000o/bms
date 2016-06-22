@@ -44,7 +44,7 @@ module.exports = (req, res, next) => {
 
       // Authorize the user to see if s/he can access our resources
       const jWhere = {userName: decoded.userName};
-      cmd = 'chkUser';
+      cmd = 'chkUserValidate';
       logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
         // console.log('jWhere : '+chalk.blue(JSON.stringify(jWhere)));
       mUser.findOne({where:jWhere}).then((user) => {
