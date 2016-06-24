@@ -41,3 +41,6 @@ config.expires = 30; // minute
 // Regular Format
 config.regUserName = /^[a-zA-Z0-9]+$/;
 config.regDigit = /^[0-9]+$/;
+
+// Response Json
+config.devMsg = true; //Response devMsg when error

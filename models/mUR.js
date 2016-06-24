@@ -24,15 +24,19 @@ const mUR = mCfg.sequelize.define('user_request', {
 	},
 	urBy: { type: Sequelize.STRING, field: 'UR_BY', allowNull: false},
 	urStatus: { type: Sequelize.STRING, field: 'UR_STATUS', allowNull: false},
+	// approveBy: { type: Sequelize.STRING, field: 'APPROVE_BY', allowNull: true},
 	rentalObjective: { type: Sequelize.STRING, field: 'RENTAL_OBJ', allowNull: true},
-	areaSize: { type: Sequelize.INTEGER, field: 'AREA_SIZE', allowNull: true},
+	areaSize: { type: Sequelize.DOUBLE, field: 'AREA_SIZE', allowNull: true},
 	unitArea: { type: Sequelize.STRING, field: 'UNIT_AREA', allowNull: true},
 	empTotal: { type: Sequelize.INTEGER, field: 'EMP_TOTAL', allowNull: true},
 	rentalDayAmount: { type: Sequelize.STRING, field: 'RENTAL_USE_AMOUNT', allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
 // mUR.belongsTo(mContract, {foreignKey:'CONTRACT_ID'});
-mUR.hasMany(mUrWf, { foreignKey:'UR_ID' }); //work
+// mUR.hasMany(mUrWf, { foreignKey:'UR_ID'}); //work
+mUR.hasMany(mUrWf, { as: 'urWorkflowList', foreignKey:'urId', targetKey: 'urId'}); //work
+// mUR.hasMany(mUrWf, { as:'ooo',foreignKey:'UR_ID'}); //Error
+// mUR.hasMany(mUrWf); //add "userRequestUrId" which not exist in mUrWf
 // mUR.hasMany(mUrWf); //Error : SequelizeDatabaseError: ER_BAD_FIELD_ERROR: Unknown column 'ur_workflows.userRequestUrId' in 'field list'
 // mUrWf.hasMany(mUR, { foreignKey:'UR_ID'}); //Error : Error: ur_workflow is not associated to user_request!
 // mUR.belongsToMany(mUrWf, {through: 'ur_workflow',foreignKey:'UR_ID'});

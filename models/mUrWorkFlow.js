@@ -2,7 +2,6 @@
 const moment = require('moment-timezone');
 const Sequelize = require('sequelize');
 const mCfg = require('../config/modelCfg');
-// const mUR = require('./mUR');
 
 const mUrWf = mCfg.sequelize.define('ur_workflow', {
 	wfId: { type: Sequelize.INTEGER , primaryKey: true, field: 'WF_ID', allowNull: false, autoIncrement: true},
@@ -14,9 +13,5 @@ const mUrWf = mCfg.sequelize.define('ur_workflow', {
 	},
 	remark: { type: Sequelize.STRING, field: 'REMARK', allowNull: true}
 },{freezeTableName: true, timestamps: false});
-
-// mUR.belongsTo(mUrWf, {foreignKey:'UR_ID'});
-// mUrWf.hasMany(mUR, { foreignKey:'UR_ID'}); //Error: ur_workflow.hasMany called with something that's not an instance of Sequelize.Model
-// mUR.hasMany(mUrWf, { foreignKey:'UR_ID'}); //TypeError: mUR.hasMany is not a function
 
 module.exports = mUrWf;

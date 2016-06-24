@@ -52,15 +52,21 @@ module.exports = (req, res, next) => {
           logger.info(req,cmd+'|Found User');
           next(); // To move to next middleware    
         }else{
-          logger.summary(req,cmd+'|Not Found User');
-          return resp.getInvalidUser(res); //Invalid User
+          //Wrong Token lead to wrong user
+          logger.info(req,cmd+'|Not Found User');
+          return resp.getInvalidToken(req,res,cmd);
+          // logger.summary(req,cmd+'|Not Found User');
+          // return resp.getInvalidUser(res); //Invalid User
         }
       }).catch((err) => {
         // console.log('Error : ' + chalk.red(err));
-        logger.error(req,cmd+'|'+err);
-        logger.summary(req,cmd+'|Error after query DB');
-        //Invalid User
-        return resp.getInvalidUser(res,err);
+        logger.error(req,cmd+'|Error while check return data from DB|'+err);
+        //Wrong Token lead to wrong user
+        return resp.getInvalidToken(req,res,cmd,err);
+
+        // logger.summary(req,cmd+'|Error after query DB');
+        // //Invalid User
+        // return resp.getInvalidUser(res,err);
       });
     } else {
       if(req.method == "OPTIONS" || req.url == "/bms/login/user"){
@@ -79,7 +85,7 @@ module.exports = (req, res, next) => {
     // console.log('flag Token : '+chalk.blue(flagT));
     logger.error(req,'validateRequest|'+err);
     // logger.summary(req,'validateRequest|Undefined Internal Error');
-    if (flagT)  resp.getInvalidToken(req,res,cmd);
+    if (flagT) return resp.getInvalidToken(req,res,cmd,err);
     else return resp.getInternalError(req,res,'validateRequest|',err);
   }
 

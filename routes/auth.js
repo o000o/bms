@@ -49,23 +49,25 @@ try{
           // console.log('auth.login response : ' + chalk.blue(JSON.stringify(json, undefined, 2)));
           // res.json(json);
         }else{
-          logger.summary(req,cmd+'|Not Found User');
-          return resp.getInvalidUser(res);
+          logger.info(req,cmd+'|Not Found User');
+          // logger.summary(req,cmd+'|Not Found User');
+          return resp.getInvalidUser(req,res,cmd);
           // console.log('=============NULL=============');
           // console.log(chalk.red('login & password mismatch]'));
           
           // res.json(resp.getJsonError(error.code_00001,error.desc_00001));
         }
       }).catch((err) => {
-        logger.error(req,cmd+'|'+err);
-        logger.summary(req,cmd+'|Error after query DB');
-        return resp.getInvalidUser(res,err);
+        logger.error(req,cmd+'|Error while check return data from DB|'+err);
+        // logger.error(req,cmd+'|'+err);
+        // logger.summary(req,cmd+'|Error after query DB');
+        return resp.getInvalidUser(req,res,cmd,err);
         // console.log('Error : ' + chalk.red(err));
         // res.json(resp.getJsonError(error.code_01002,error.desc_01002));
       });
 
     }else{
-      logger.error(req,cmd+'|Not Pass');
+      logger.info(req,cmd+'|Not Pass');
       return resp.getIncompleteParameter(req,res,cmd);
       // logger.summary(req,cmd+'Invalid Parameter');
       // res.json(resp.getJsonError(error.code_00005,error.desc_00005));

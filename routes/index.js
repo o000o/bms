@@ -24,6 +24,7 @@ router.post('/getUserRequest', userRequest.queryByCriteria);
 router.get('/userRequest/:urId', userRequest.queryById);
 router.delete('/userRequest/:urId', userRequest.delete);
 router.put('/userRequest/updateStatus', userRequest.updateStatus);
+// router.post('/countUserRequest', userRequest.count);
 
 // ============================================================================
 // Location Master

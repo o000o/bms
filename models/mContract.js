@@ -19,19 +19,14 @@ const mContract = mCfg.sequelize.define('contract', {
 	endDate: { type: Sequelize.DATEONLY, field: 'END_DATE', allowNull: false,
 		get: function()  {return mCfg.correctTime(this.getDataValue('endDate'));}
 	},
-	contractDuration: { type: Sequelize.INTEGER, field: 'CONTRACT_DURATION', allowNull: false },
-	rentalObj: { type: Sequelize.STRING, field: 'RENTAL_OBJ', allowNull: false},
+	contractDuration: { type: Sequelize.STRING, field: 'CONTRACT_DURATION', allowNull: false },
 	adminOwner: { type: Sequelize.STRING, field: 'ADMIN_OWNER', allowNull: false},
 	adminTeam: { type: Sequelize.STRING, field: 'ADMIN_TEAM', allowNull: false},
 	contractStatus: { type: Sequelize.STRING, field: 'CONTRACT_STATUS', allowNull: false},
-	approvalBy: { type: Sequelize.STRING, field: 'APPROVAL_BY', allowNull: true},
-	approvalDate: { type: Sequelize.DATEONLY, field: 'APPROVAL_DATE', allowNull: false,
-		get: function()  {return mCfg.correctTime(this.getDataValue('approvalDate'));}
-	},
-	remark: { type: Sequelize.STRING, field: 'REMARK', allowNull: true},
-	renewByContractId: { type: Sequelize.STRING, field: 'RENEW_BY_CONTRACT_ID', allowNull: true}
+	oldContractId: { type: Sequelize.STRING, field: 'OLD_CONTRACT_ID', allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
-// mContract.belongsTo(mVendorProfile, {foreignKey:'VENDOR_ID'});
+mContract.belongsTo(mVendorProfile, {foreignKey:'vendorId', targetKey:'vendorId'});
+// mContract.belongsTo(mVendorProfile);
 
 module.exports = mContract;
