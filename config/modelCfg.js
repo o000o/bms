@@ -11,13 +11,14 @@ mCfg.timeZone = 'Asia/Bangkok';
 
 //**** Connect mySQL ****
 mCfg.sequelize = new Sequelize(cfg.dbName, cfg.dbUser, cfg.dbPwd, {
+// mCfg.sequelize = new Sequelize('ooo', 'ooo', '000', {
 	timezone:'+07:00',
 	logging: logger.db,
 	// logging: console.log,
 	// logging: false,
 	dialect: 'mysql',
 	host: cfg.dbHost,
-//   host: '10.252.176.111',
+  // host: '10.252.176.111',
 //**** Connect msSQL ****
 // config.sequelize = new Sequelize('BMSDB', 'bmsadmin', 'P@ssw0rd', {
 // 	dialect: 'mssql',

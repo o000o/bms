@@ -1,6 +1,6 @@
 'use strict'
 // const response = require('../response/broadcastResponse.js');
-const chalk = require('chalk');
+// const chalk = require('chalk');
 const resp = require('../utils/respUtils');
 const util = require('../utils/bmsUtils');
 const logger = require('../utils/logUtils');
@@ -19,11 +19,12 @@ const userRequest = {
       logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
       // console.log(chalk.green('=========== Approval UR ==========='));
       // console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body, undefined, 2)));
-      cmd = 'addWorkflow';
-      mUrWf
-        .build(req.body.requestData)
-        .save()
-        .then((succeed) => {
+      cmd = 'createWorkflow';
+      // mUrWf
+      //   .build(req.body.requestData)
+      //   .save()
+      //   .then((succeed) => {
+      mUrWf.create(req.body.requestData).then((succeed) => {
           logger.info(req,cmd+'|AddedWorkflow:'+JSON.stringify(succeed));
           const jWhere = {urId:req.body.requestData.urId};
           delete req.body.requestData.urId;
@@ -41,7 +42,7 @@ const userRequest = {
             // return resp.getInternalError(req,res,cmd,err);
           });
         }).catch((err) => {
-          logger.error(req,cmd+'|Error when build or save mUrWf|'+err);
+          logger.error(req,cmd+'|Error when create mUrWf|'+err);
           // return resp.getInternalError(req,res,cmd,err);
           logger.summary(req,cmd+'|'+error.desc_01001);
           res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
@@ -64,26 +65,28 @@ const userRequest = {
 //*********query at DM then add UR then add Workflow
 //****** Replace updateBy:system with DM name
 
-      cmd = 'addUR';
-      mUR
-        .build(req.body.requestData)
-        .save()
-        .then((succeed) => {
+      cmd = 'createUR';
+      // mUR
+      //   .build(req.body.requestData)
+      //   .save()
+      //   .then((succeed) => {
+      mUR.create(req.body.requestData).then((succeed) => {
           logger.info(req,cmd+'|AddedUR:'+JSON.stringify(succeed));
-          cmd = 'addWorkflow';
+          cmd = 'createWorkflow';
           if(!util.isDataFound(succeed.urId)){
             req.body.requestData.urDate=succeed.urDate;
             logger.info(req,cmd+'|No urId findOne|where:'+JSON.stringify(req.body.requestData));
             mUR.findOne({where:req.body.requestData,attributes:['urId']}).then((db) => {
               logger.info(req,cmd+'|foundUR:'+JSON.stringify(db));
-              mUrWf
-                .build({urId:db.urId,urStatus:req.body.requestData.urStatus,updateBy:"system"})
-                .save()
-                .then((succeed) => {
+              // mUrWf
+              //   .build({urId:db.urId,urStatus:req.body.requestData.urStatus,updateBy:"system"})
+              //   .save()
+              //   .then((succeed) => {
+              mUrWf.create({urId:db.urId,urStatus:req.body.requestData.urStatus,updateBy:"system"}).then((succeed) => {
                   logger.info(req,cmd+'|AddedWF:'+JSON.stringify(succeed));
                   return resp.getSuccess(req,res,cmd);
               }).catch((err) => {
-                logger.error(req,cmd+'|Error when build or save mUrWf|'+err);
+                logger.error(req,cmd+'|Error when create mUrWf|'+err);
                 logger.summary(req,cmd+'|'+error.desc_01001);
                 res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
                   // return resp.getInternalError(req,res,cmd,err);
@@ -96,14 +99,15 @@ const userRequest = {
               return res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
             });
           }else{
-            mUrWf
-              .build({urId:succeed.urId,urStatus:req.body.requestData.urStatus,updateBy:"system"})
-              .save()
-              .then((succeed) => {
+            // mUrWf
+            //   .build({urId:succeed.urId,urStatus:req.body.requestData.urStatus,updateBy:"system"})
+            //   .save()
+            //   .then((succeed) => {
+            mUrWf.create({urId:db.urId,urStatus:req.body.requestData.urStatus,updateBy:"system"}).then((succeed) => {
                 logger.info(req,cmd+'|AddedWF:'+JSON.stringify(succeed));
                 return resp.getSuccess(req,res,cmd);
             }).catch((err) => {
-              logger.error(req,cmd+'|Error when build or save mUrWf|'+err);
+              logger.error(req,cmd+'|Error when create mUrWf|'+err);
               logger.summary(req,cmd+'|'+error.desc_01001);
               res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
                 // return resp.getInternalError(req,res,cmd,err);
@@ -112,7 +116,7 @@ const userRequest = {
             })
           }
         }).catch((err) => {
-          logger.error(req,cmd+'|Error when build or save mUR|'+err);
+          logger.error(req,cmd+'|Error when create mUR|'+err);
           logger.summary(req,cmd+'|'+error.desc_01001);
           res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
           // return resp.getInternalError(req,res,cmd,err);

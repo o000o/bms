@@ -7,8 +7,8 @@ const mVendorProfile = require('./mVendorProfile');
 // const mContract = cfg.sequelize.define('CONTRACT', {
 const mContract = mCfg.sequelize.define('contract', {
 	// CONTRACT_ID: { type: Sequelize.UUID , primaryKey: true, defaultValue: Sequelize.UUIDV1, allowNull: false},
-	contractId: { type: Sequelize.STRING, field: 'CONTRACT_ID', primaryKey: true, allowNull: false},
-	vendorId: { type: Sequelize.INTEGER, field: 'VENDOR_ID', allowNull: false },
+	contractId: { type: Sequelize.STRING, field: 'CONTRACT_ID', primaryKey: true, allowNull: true},
+	vendorId: { type: Sequelize.INTEGER, field: 'VENDOR_ID', allowNull: true },
 	contractNo: { type: Sequelize.STRING, field: 'CONTRACT_NO', allowNull: false},
 	contractDate: { type: Sequelize.DATEONLY, field: 'CONTRACT_DATE', allowNull: false, 
 		get: function() {return mCfg.correctTime(this.getDataValue('contractDate'));}

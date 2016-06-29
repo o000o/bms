@@ -10,12 +10,13 @@ const mBuildingArea = mCfg.sequelize.define('building_area', {
 	areaName: { type: Sequelize.STRING, field: 'AREA_NAME', allowNull: false },
 	floor: { type: Sequelize.STRING, field: 'FLOOR', allowNull: false},
 	homeNo: { type: Sequelize.STRING, field: 'HOME_NO', allowNull: true},
-	meetingRoom: { type: Sequelize.INTEGER, field: 'MEETING_ROOM', allowNull: true},
-	menToilet: { type: Sequelize.INTEGER, field: 'MEN_TOILET', allowNull: true},
-	womenToilet: { type: Sequelize.INTEGER, field: 'WOMEN_TOILET', allowNull: true},
+	meetingRoomAmount: { type: Sequelize.INTEGER, field: 'MEETING_ROOM_AMOUNT', allowNull: true},
+	menToiletAmount: { type: Sequelize.INTEGER, field: 'MEN_TOILET_AMOUNT', allowNull: true},
+	womenToiletAmount: { type: Sequelize.INTEGER, field: 'WOMEN_TOILET_AMOUNT', allowNull: true},
 	areaSize: { type: Sequelize.INTEGER, field: 'AREA_SIZE', allowNull: false},
 	unitArea: { type: Sequelize.STRING, field: 'UNIT_AREA', allowNull: false},
-	empTotal: { type: Sequelize.INTEGER, field: 'EMP_TOTAL', allowNull: true}
+	employeeTotal: { type: Sequelize.INTEGER, field: 'EMPLOYEE_AMOUNT', allowNull: true},
+	rentalObjective: { type: Sequelize.STRING, field: 'RENTAL_OBJ', allowNull: false}
 },{freezeTableName: true, timestamps: false});
 
 // mVendorProfileContact.belongsTo(mVendorProfile, {foreignKey:'VENDOR_ID'});

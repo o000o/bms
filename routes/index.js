@@ -8,6 +8,9 @@ const contract = require('./contract.js');
 const vendorProfile = require('./vendorProfile.js');
 const userRequest = require('./userRequest.js');
 const notification = require('./notification.js')
+// const user = require('../_ooo/user.js')
+
+// router.get('/ooo', user.queryUser);
 
 // ============================================================================
 // Login

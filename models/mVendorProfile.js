@@ -1,7 +1,7 @@
 'use strict'
 const Sequelize = require('sequelize');
 const mCfg = require('../config/modelCfg');
-const mVendorContract = require('./mVendorProfileContact');
+const mVendorContact = require('./mVendorProfileContact');
 
 // const mVendorProfile = cfg.sequelize.define('VENDOR_PROFILE', {
 const mVendorProfile = mCfg.sequelize.define('vendor_profile', {
@@ -25,7 +25,7 @@ const mVendorProfile = mCfg.sequelize.define('vendor_profile', {
 	email: { type: Sequelize.STRING, field: 'EMAIL', allowNull: false}
 },{freezeTableName: true, timestamps: false});
 
-mVendorProfile.hasMany(mVendorContract, {as:'vendorContactList', foreignKey:'vendorId', targetKey:'vendorId'});
+mVendorProfile.hasMany(mVendorContact, {as:'vendorContactList', foreignKey:'vendorId', targetKey:'vendorId'});
 // mVendorProfile.hasMany(mVendorContract);
 
 module.exports = mVendorProfile;

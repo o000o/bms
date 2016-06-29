@@ -67,9 +67,10 @@ app.use((req, res, next) => {
 // Catch 500 Error
 app.use((err, req, res, next) => {
   logger.error(req,err);
-  logger.summary(req,err);
-  // res.status(err.status || 500);
-  resp.getInternalError(res, err);
+  res.status(err.status || 500);
+  logger.summary(req,'Server Catch 500 Error');
+  return res.json(resp.getJsonError(error.code_00003, error.desc_00003, err.message));
+  // resp.getInternalError(req,res,'Server Catch 500',err);
   // res.json(resp.getJsonError(error.code_00003, error.desc_00003, err));
 });
 
