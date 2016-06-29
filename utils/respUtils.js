@@ -16,28 +16,28 @@ exports.getInvalidToken = (req,res,cmd,err) => {
 	logger.summary(req,cmd+'|Invalid Token');
 	if(err!=null)res.status(err.status || 401);
 	else res.status(401);
-    res.json(this.getJsonError(error.code_00002, error.desc_00002, err.message));
+    res.json(this.getJsonError(error.code_00002, error.desc_00002, err));
 }
 
 exports.getInvalidUser = (req,res,cmd,err) => {
 	logger.summary(req,cmd+'|Invalid User');
 	if(err!=null)res.status(err.status || 401);
 	else res.status(401);
-    res.json(this.getJsonError(error.code_00001, error.desc_00001, err.message));
+    res.json(this.getJsonError(error.code_00001, error.desc_00001, err));
 }
 
 exports.getInternalError = (req,res,cmd,err) => {
 	logger.summary(req,cmd+'|Undefined Internal Error');
 	if(err!=null)res.status(err.status || 500);
 	else res.status(500);
-    res.json(this.getJsonError(error.code_00003, error.desc_00003, err.message));
+    res.json(this.getJsonError(error.code_00003, error.desc_00003, err));
 }
 
 exports.getIncompleteParameter = (req,res,cmd,err) => {
 	logger.summary(req,cmd+'|Incomplete Parameter');
 	if(err!=null)res.status(err.status || 400);
 	else res.status(400);
-    res.json(this.getJsonError(error.code_00005, error.desc_00005, err.message));
+    res.json(this.getJsonError(error.code_00005, error.desc_00005, err));
 }
 
 exports.getSuccess = (req,res,cmd,resObj) => {

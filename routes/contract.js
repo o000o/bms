@@ -43,7 +43,7 @@ const contract = {
 
       mContract.findOne({where:jWhere}).then((db) => {
         console.log('Contract => ' + chalk.blue(JSON.stringify(db)));
-        if(util.chkDataFound(db)) {
+        if(util.isDataFound(db)) {
           db
             .update(req.body.requestData)
             .then((succeed) => {
@@ -75,7 +75,7 @@ const contract = {
 
       mContract.findOne({where:jWhere}).then((db) => {
         console.log('Contract => ' + chalk.blue(JSON.stringify(db)));
-        if(util.chkDataFound(db)) {
+        if(util.isDataFound(db)) {
           db
             .destroy()
             .then((succeed) => {
@@ -106,8 +106,8 @@ const contract = {
       const jLimit={offset: null, limit: null};
       if(Object.keys(req.query).length !=0){
         console.log(chalk.green('=========== NOT NUll ==========='));
-        if(util.chkDigit(req.query.page) && util.chkDigit(req.query.count)){
-          console.log(chalk.green('=========== chkDigit ==========='));
+        if(util.isDigit(req.query.page) && util.isDigit(req.query.count)){
+          console.log(chalk.green('=========== isDigit ==========='));
           jLimit.offset = (req.query.page -1)*req.query.count;
           jLimit.limit = parseInt(req.query.count);
         }else{
@@ -118,7 +118,7 @@ const contract = {
       console.log('jLimit : '+chalk.blue(JSON.stringify(jLimit)));
       mContract.findAndCountAll(jLimit).then((db) => {
         console.log('Contract : '+chalk.blue(JSON.stringify(db)));
-        if(util.chkDataFound(db.rows)) res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000,{"totalRecord":db.count,"contractList":db.rows}));
+        if(util.isDataFound(db.rows)) res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000,{"totalRecord":db.count,"contractList":db.rows}));
         else res.json(resp.getJsonSuccess(error.code_01003,error.desc_01003));
       }).catch((err) => {
         console.log('Error : ' + chalk.red(err));
@@ -135,10 +135,10 @@ const contract = {
       console.log(chalk.green('=========== Query Contract By Criteria ==========='));
       console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body.requestData, undefined, 2)));
 
-      if(util.chkDataFound(req.body)){
+      if(util.isDataFound(req.body)){
         mContract.findAll({where:req.body.requestData}).then((db) => {
           console.log('rows.count: ' + chalk.blue(db.length));
-          if(util.chkDataFound(db)) res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000,{"contractList":db}));
+          if(util.isDataFound(db)) res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000,{"contractList":db}));
           else res.json(resp.getJsonSuccess(error.code_01003,error.desc_01003));
         }).catch((err) => {
           console.log('Error : ' + chalk.red(err));
@@ -160,10 +160,10 @@ const contract = {
       const jWhere = {contractId: req.params.contractId};
       mContract.findOne({where:jWhere}).then((db) => {
         console.log('Contract : '+chalk.blue(JSON.stringify(db)));
-        if(util.chkDataFound(db)){
+        if(util.isDataFound(db)){
           // let dbClone = JSON.parse(JSON.stringify(db));
           // console.log('ur_workflows : '+chalk.blue(JSON.stringify(db.ur_workflows)));
-          // if(util.chkDataFound(db.ur_workflows)){
+          // if(util.isDataFound(db.ur_workflows)){
           //   console.log(chalk.green('=========== Yes ==========='));
           //   dbClone.urWorkflowList = db.ur_workflows;
           //   delete dbClone.ur_workflows;

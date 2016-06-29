@@ -4,6 +4,7 @@ const fs = require('fs');
 const os = require("os");
 const logCfg = require('../config/config');
 const util = require('../utils/bmsUtils');
+const moment = require('moment-timezone');
 
 var exports = module.exports = {};
 
@@ -75,7 +76,9 @@ function getLogFileName()
 
 function getLogHeader(logStatus,reqData) //${LogTime}|${hostname}|${appname}|INCOMING|Token|COMMAMD|Data|...
 {
-    let strHead = getDateTimeFormat()+'|'+os.hostname()+logCfg.log.projectName+'|'+logStatus;
+    let headTime = moment(new Date()).tz('Asia/Bangkok').format('YYYYMMDDHHmmss');
+    // let strHead = getDateTimeLogFormat()+'|'+os.hostname()+logCfg.log.projectName+'|'+logStatus;
+    let strHead = headTime+'|'+os.hostname()+logCfg.log.projectName+'|'+logStatus;
     
     if(reqData!=null && reqData!=''){
         // strHead = strHead + '|'+reqData.path+ '|IP:'+reqData.ip+'|'+reqData.originalUrl;

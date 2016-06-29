@@ -48,7 +48,7 @@ module.exports = (req, res, next) => {
       logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
         // console.log('jWhere : '+chalk.blue(JSON.stringify(jWhere)));
       mUser.findOne({where:jWhere}).then((user) => {
-        if(util.chkDataFound(user)){
+        if(util.isDataFound(user)){
           logger.info(req,cmd+'|Found User');
           next(); // To move to next middleware    
         }else{

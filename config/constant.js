@@ -2,10 +2,20 @@
 
 const constant = module.exports = {};
 
-constant.activeStatus = "Active";
-constant.otpStatusSuccess = "Success";
-constant.emailStatusSuccess = "Success";
-constant.forgetFlagN = "N";
-constant.forgetFlagY = "Y";
-constant.corpUser = "CU";
-constant.corpAdmin = "CA";
+//
+constant.wDmApproval = "W_DM_APPROVAL";
+constant.dmApproved = "DM_APPROVAL";
+constant.dmRejected = "DM_REJECT";
+constant.adminRejected = "ADMIN_REJECT";
+constant.adminAccept = "ADMIN_ACCEPT";
+constant.complete = "COMPLETE";
+constant.close = "CLOSE";
+
+//notification group
+constant.myUr = "My Request";
+constant.Ur = "User Request";
+
+//userType
+constant.admin = ['CENTERADMIN','AISADMIN'];
+constant.dm = ['DM','MANAGER'];
+constant.user = ['USER'];

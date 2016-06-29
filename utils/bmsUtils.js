@@ -22,9 +22,9 @@ const utils = {
 
 	// },
 
-	chkDataFound: (resObj) => {
+	isDataFound: (resObj) => {
 		// console.log('resObj: ' + resObj);
-		if(resObj==null){
+		if(resObj==null || resObj=='undefined'){
 			return false;
 		}else{
 			// console.log('resObj.length: ' + resObj.length);
@@ -38,7 +38,7 @@ const utils = {
 		}
 	},
 
-	chkDigit: (strDigit) => {
+	isDigit: (strDigit) => {
 	//(strDigit && cfg.regDigit.test(strDigit)) ? return true : return false;
 		if(strDigit && cfg.regDigit.test(strDigit)){
 		     return true;
@@ -54,6 +54,7 @@ const utils = {
 		    let userTokenId = jwt.encode({
 		      // userId: data._id,
 		      userName: data.userName,
+		      userType: data.userType,
 		      // password: data.password,
 		      // userGroupId: data.userGroupId,
 		      exp: expire

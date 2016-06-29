@@ -35,7 +35,7 @@ try{
       logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
       mUser.findOne({where:jWhere}).then((user) => {
         // console.log('user : '+chalk.blue(JSON.stringify(user)));
-        if(util.chkDataFound(user)) {
+        if(util.isDataFound(user)) {
           logger.info(req,cmd+'|Found User|'+JSON.stringify(user));
           return resp.getSuccess(req,res,cmd,genLoginRespObj(user));
 
@@ -65,15 +65,12 @@ try{
         // console.log('Error : ' + chalk.red(err));
         // res.json(resp.getJsonError(error.code_01002,error.desc_01002));
       });
-
     }else{
       logger.info(req,cmd+'|Not Pass');
       return resp.getIncompleteParameter(req,res,cmd);
       // logger.summary(req,cmd+'Invalid Parameter');
       // res.json(resp.getJsonError(error.code_00005,error.desc_00005));
     }
-
-
 }catch (err) {
   logger.error(req,cmd+'|'+err);
   // logger.summary(req,cmd+'Undefined Internal Error');

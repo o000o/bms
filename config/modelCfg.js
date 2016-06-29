@@ -34,5 +34,6 @@ mCfg.sequelize = new Sequelize(cfg.dbName, cfg.dbUser, cfg.dbPwd, {
 });
 
 mCfg.correctTime = (varDate) => {
-	return moment(varDate).tz(mCfg.timeZone).format(cfg.timeFormat);
+	if(varDate) return moment(varDate).tz(mCfg.timeZone).format(cfg.timeFormat);
+	else return;
 };

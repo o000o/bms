@@ -24,44 +24,27 @@ const userRequest = {
         .build(req.body.requestData)
         .save()
         .then((succeed) => {
-          // console.log('Save Result : ' + chalk.green(succeed));
-          // console.log('Save Data : ' + chalk.blue(JSON.stringify(succeed, undefined, 2)));
+          logger.info(req,cmd+'|AddedWorkflow:'+JSON.stringify(succeed));
           const jWhere = {urId:req.body.requestData.urId};
-          cmd = 'findUR';
-          logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
-          mUR.findOne({where:jWhere}).then((db) => {
-            // console.log('UR => ' + chalk.blue(JSON.stringify(db)));
-            cmd = 'chkUrData';
-            if(util.chkDataFound(db)) {
-              db
-                .update(req.body.requestData)
-                .then((succeed) => {
-                  return resp.getSuccess(req,res,cmd);
-                  // console.log('Save Result : ' + chalk.green(succeed));
-                  // console.log('VendorProfile : ' + chalk.blue(JSON.stringify(succeed, undefined, 2)));
-                  // res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000));
-                }).catch((err) => { //No use unless it has error under .then(succeed)
-                  logger.error(req,cmd+'|Error when build or save|'+err);
-                  logger.summary(req,cmd+'|'+error.desc_01001);
-                  res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
-                  // console.log('Error : ' + chalk.red(err));
-                  // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
-                })
-            }else{
-              logger.summary(req,cmd+'|Not Found UR');
-              res.json(resp.getJsonError(error.code_01003,error.desc_01003));
-            }
+          delete req.body.requestData.urId;
+          delete req.body.requestData.updateBy
+          cmd = 'updateUR';
+          // logger.info(req,cmd+'|where:'+JSON.stringify(jWhere)+'|set:'+req.body.requestData);
+          mUR.update(req.body.requestData,{where:jWhere}).then((succeed) => {
+            logger.info(req,cmd+'|updated '+ succeed +' records');
+            return resp.getSuccess(req,res,cmd);
           }).catch((err) => {
-            logger.error(req,cmd+'|Error when query or update mUR|'+err);
-            return resp.getInternalError(req,res,cmd,err);
-                // console.log('Error : ' + chalk.red(err));
-                // res.json(resp.getJsonError(error.code_01002,error.desc_01002));
+            logger.error(req,cmd+'|Error while update UR|'+err);
+            logger.summary(req,cmd+'|'+error.desc_01001);
+            res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+            // logger.error(req,cmd+'|Error when query or delete|'+err);
+            // return resp.getInternalError(req,res,cmd,err);
           });
         }).catch((err) => {
           logger.error(req,cmd+'|Error when build or save mUrWf|'+err);
-          return resp.getInternalError(req,res,cmd,err);
-          // console.log('Error : ' + chalk.red(err));
-          // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
+          // return resp.getInternalError(req,res,cmd,err);
+          logger.summary(req,cmd+'|'+error.desc_01001);
+          res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
         })
     }catch(err){
       logger.error(req,cmd+'|'+err);
@@ -79,7 +62,7 @@ const userRequest = {
       // console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body, undefined, 2)));
 
 //*********query at DM then add UR then add Workflow
-//****** Replace updateBy:system with DM data
+//****** Replace updateBy:system with DM name
 
       cmd = 'addUR';
       mUR
@@ -88,24 +71,46 @@ const userRequest = {
         .then((succeed) => {
           logger.info(req,cmd+'|AddedUR:'+JSON.stringify(succeed));
           cmd = 'addWorkflow';
-          mUrWf
-            .build({urId:"UR-20160624-01",urStatus:req.body.requestData.urStatus,updateBy: "system"})
-            .save()
-            .then((succeed) => {
-              logger.info(req,cmd+'|AddedWF:'+JSON.stringify(succeed));
-              return resp.getSuccess(req,res,cmd);
-          }).catch((err) => {
-            logger.error(req,cmd+'|Error when build or save mUrWf|'+err);
-            logger.summary(req,cmd+'|'+error.desc_01001);
-            res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
-              // return resp.getInternalError(req,res,cmd,err);
-              // console.log('Error : ' + chalk.red(err));
-              // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
-          })
-          // return resp.getSuccess(req,res,cmd);
-          // console.log('Save Result : ' + chalk.green(succeed));
-          // console.log('Save Data : ' + chalk.blue(JSON.stringify(succeed, undefined, 2)));
-          // res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000));
+          if(!util.isDataFound(succeed.urId)){
+            req.body.requestData.urDate=succeed.urDate;
+            logger.info(req,cmd+'|No urId findOne|where:'+JSON.stringify(req.body.requestData));
+            mUR.findOne({where:req.body.requestData,attributes:['urId']}).then((db) => {
+              logger.info(req,cmd+'|foundUR:'+JSON.stringify(db));
+              mUrWf
+                .build({urId:db.urId,urStatus:req.body.requestData.urStatus,updateBy:"system"})
+                .save()
+                .then((succeed) => {
+                  logger.info(req,cmd+'|AddedWF:'+JSON.stringify(succeed));
+                  return resp.getSuccess(req,res,cmd);
+              }).catch((err) => {
+                logger.error(req,cmd+'|Error when build or save mUrWf|'+err);
+                logger.summary(req,cmd+'|'+error.desc_01001);
+                res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+                  // return resp.getInternalError(req,res,cmd,err);
+                  // console.log('Error : ' + chalk.red(err));
+                  // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
+              })
+            }).catch((err) => {
+              logger.error(req,cmd+'|Not Found UR|'+err);
+              logger.summary(req,cmd+'|No new urId can not add workflow ');
+              return res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+            });
+          }else{
+            mUrWf
+              .build({urId:succeed.urId,urStatus:req.body.requestData.urStatus,updateBy:"system"})
+              .save()
+              .then((succeed) => {
+                logger.info(req,cmd+'|AddedWF:'+JSON.stringify(succeed));
+                return resp.getSuccess(req,res,cmd);
+            }).catch((err) => {
+              logger.error(req,cmd+'|Error when build or save mUrWf|'+err);
+              logger.summary(req,cmd+'|'+error.desc_01001);
+              res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+                // return resp.getInternalError(req,res,cmd,err);
+                // console.log('Error : ' + chalk.red(err));
+                // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
+            })
+          }
         }).catch((err) => {
           logger.error(req,cmd+'|Error when build or save mUR|'+err);
           logger.summary(req,cmd+'|'+error.desc_01001);
@@ -126,41 +131,19 @@ const userRequest = {
     let cmd = 'editUr';
     try{
       logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
-      // console.log(chalk.green('=========== Edit UR ==========='));
-      // console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body, undefined, 2)));
       const jWhere = {urId:req.body.requestData.urId};
-      logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
-      // console.log('jWhere typeof : ' + chalk.blue(typeof jWhere));
-      // console.log('jWhere : '+chalk.blue(JSON.stringify(jWhere)));
-
-      cmd = 'findUR';
-      mUR.findOne({where:jWhere}).then((db) => {
-        // console.log('UR => ' + chalk.blue(JSON.stringify(db)));
-        cmd = 'chkUrData';
-        if(util.chkDataFound(db)) {
-          cmd = 'updateUr';
-          db
-            .update(req.body.requestData)
-            .then((succeed) => {
-              return resp.getSuccess(req,res,cmd);
-              // console.log('Save Result : ' + chalk.green(succeed));
-              // console.log('VendorProfile : ' + chalk.blue(JSON.stringify(succeed, undefined, 2)));
-              // res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000));
-            }).catch((err) => { //No use unless it has error under .then(succeed)
-              // console.log('Error : ' + chalk.red(err));
-              logger.error(req,cmd+'|Error when update|'+err);
-              logger.summary(req,cmd+'|'+error.desc_01001);
-              res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
-            })
-        }else{
-          logger.summary(req,cmd+'|Not Found UR');
-          res.json(resp.getJsonError(error.code_01003,error.desc_01003));
-        }
+      delete req.body.requestData.urId;
+      cmd = 'updateUR';
+      // logger.info(req,cmd+'|where:'+JSON.stringify(jWhere)+'|set:'+req.body.requestData);
+      mUR.update(req.body.requestData, { where: jWhere }).then((succeed) => {
+        logger.info(req,cmd+'|updated '+ succeed +' records');
+        return resp.getSuccess(req,res,cmd);
       }).catch((err) => {
-        logger.error(req,cmd+'|Error when query or update|'+err);
-        return resp.getInternalError(req,res,cmd,err);
-            // console.log('Error : ' + chalk.red(err));
-            // res.json(resp.getJsonError(error.code_01002,error.desc_01002));
+        logger.error(req,cmd+'|Error while update UR|'+err);
+        logger.summary(req,cmd+'|'+error.desc_01001);
+        res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+        // logger.error(req,cmd+'|Error when query or delete|'+err);
+        // return resp.getInternalError(req,res,cmd,err);
       });
     }catch(err){
       logger.error(req,cmd+'|'+err);
@@ -173,41 +156,18 @@ const userRequest = {
   delete: (req, res) => {
     let cmd = 'deleteUr';
     try{
-      // console.log(chalk.green('=========== Delete UR ==========='));
-      // console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body, undefined, 2)));
-      // const jWhere = { UR_ID: req.body.requestData.userid};
       const jWhere = {urId:req.params.urId};
-      // console.log('jWhere typeof : ' + chalk.blue(typeof jWhere));
-      // console.log('jWhere : '+chalk.blue(JSON.stringify(jWhere)));
       logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
-      cmd = 'findUR';
-      mUR.findOne({where:jWhere}).then((db) => {
-        // console.log('UR => ' + chalk.blue(JSON.stringify(db)));
-        cmd = 'chkUrData';
-        if(util.chkDataFound(db)) {
-          cmd = 'deleteUr';
-          db
-            .destroy()
-            .then((succeed) => {
-              // console.log('Save Result : ' + chalk.green(succeed));
-              return resp.getSuccess(req,res,cmd);
-              // res.json(resp.getJsonSuccess(error.code_00000,error.desc_00000));
-            }).catch((err) => { //No use unless it has error under .then(succeed)
-              logger.error(req,cmd+'|Error when delete|'+err);
-              logger.summary(req,cmd+'|'+error.desc_01001);
-              // return resp.getInternalError(req,res,cmd,err);
-              // console.log('Error : ' + chalk.red(err));
-              res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
-            })
-        } else {
-          logger.summary(req,cmd+'|Not Found UR');
-          res.json(resp.getJsonError(error.code_01003,error.desc_01003));
-        }
+      cmd = 'destroyUR';
+      mUR.destroy({where:jWhere}).then((succeed) => {
+        logger.info(req,cmd+'|deleted '+ succeed +' records');
+        return resp.getSuccess(req,res,cmd);
       }).catch((err) => {
-        logger.error(req,cmd+'|Error when query or delete|'+err);
-        return resp.getInternalError(req,res,cmd,err);
-            // console.log('Error : ' + chalk.red(err));
-            // res.json(resp.getJsonError(error.code_01002,error.desc_01002));
+        logger.error(req,cmd+'|Error while delete UR|'+err);
+        logger.summary(req,cmd+'|'+error.desc_01001);
+        res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+        // logger.error(req,cmd+'|Error when query or delete|'+err);
+        // return resp.getInternalError(req,res,cmd,err);
       });
     }catch(err){
       logger.error(req,cmd+'|'+err);
@@ -232,8 +192,8 @@ const userRequest = {
       if(Object.keys(req.query).length !=0){
         cmd = 'chkPageCount';
         // console.log(chalk.green('=========== NOT NUll ==========='));
-        if(util.chkDigit(req.query.page) && util.chkDigit(req.query.count)){
-          // console.log(chalk.green('=========== chkDigit ==========='));
+        if(util.isDigit(req.query.page) && util.isDigit(req.query.count)){
+          // console.log(chalk.green('=========== isDigit ==========='));
           jLimit.offset = (req.query.page -1)*req.query.count;
           jLimit.limit = parseInt(req.query.count);
         }else{
@@ -257,14 +217,17 @@ const userRequest = {
         // console.log('rows: ' + chalk.blue(db.rows));
         // console.log('rows.count: ' + chalk.blue(db.rows.length));
         cmd = 'chkUrData';
-        if(util.chkDataFound(db.count>0)) return resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"userRequestList":db.rows});
+        if(util.isDataFound(db.count>0)) return resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"userRequestList":db.rows});
         else{
           logger.summary(req,cmd+'|Not Found UR');
           res.json(resp.getJsonError(error.code_01003,error.desc_01003));
         }
       }).catch((err) => {
         logger.error(req,cmd+'|Error while check UR return|'+err);
-        return resp.getInternalError(req,res,cmd,err);
+        // return resp.getInternalError(req,res,cmd,err);
+
+        logger.summary(req,cmd+'|'+error.desc_01002);
+        res.json(resp.getJsonError(error.code_01002,error.desc_01002,err));
         // console.log('Error : ' + chalk.red(err));
         // res.json(resp.getJsonError(error.code_01002,error.desc_01002));
       });
@@ -304,7 +267,7 @@ const userRequest = {
     let cmd = 'queryUrByCriteria';
     try{
       logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
-      if(util.chkDataFound(req.body)){
+      if(util.isDataFound(req.body)){
         // mUR.findAll({where:req.body.requestData,
         // include:[{model:mUrWf, as: 'urWorkflowList',attributes: { exclude: ['urId'] }}]
         // }).then((db) => {
@@ -314,24 +277,23 @@ const userRequest = {
         // delete req.body.requestData.urWorkflowList;
         let jWhere = {};
         cmd = 'genWhere';
-        if(util.chkDataFound(req.body.requestData.urCriteria)){
+        if(util.isDataFound(req.body.requestData.urCriteria)){
           logger.info(req,cmd+'|gen urCriteria');
           jWhere = req.body.requestData.urCriteria;
         }else{
           logger.info(req,cmd+'|default UR attributes with no criteria');
         }
-        if(util.chkDataFound(req.body.requestData.workflowCriteria)){
+        if(util.isDataFound(req.body.requestData.workflowCriteria)){
           logger.info(req,cmd+'|gen workflowCriteria');
           req.body.requestData.workflowCriteria.model=mUrWf;
           req.body.requestData.workflowCriteria.as='urWorkflowList';
-          if(util.chkDataFound(req.body.requestData.workflowCriteria.attributes)){
+          if(util.isDataFound(req.body.requestData.workflowCriteria.attributes)){
             logger.info(req,cmd+'|selected workflow attributes');
-            jWhere.include = req.body.requestData.workflowCriteria;
           }else{
             logger.info(req,cmd+'|default workflow attributes');
-            req.body.requestData.workflowCriteria.attributes={ exclude: ['urId'] };
-            jWhere.include = req.body.requestData.workflowCriteria;
+            req.body.requestData.workflowCriteria.attributes={ exclude: ['urId'] }; 
           }
+          jWhere.include = req.body.requestData.workflowCriteria;
         }else{
           logger.info(req,cmd+'|default workflow attributes with no criteria');
           jWhere.include = [{model:mUrWf, as: 'urWorkflowList',attributes: { exclude: ['urId'] }}];
@@ -342,14 +304,16 @@ const userRequest = {
         mUR.findAll(jWhere).then((db) => {
           // console.log('rows.count: ' + chalk.blue(db.length));
           cmd = 'chkUrData';
-          if(util.chkDataFound(db)) return resp.getSuccess(req,res,cmd,{"userRequestList":db});
+          if(util.isDataFound(db)) return resp.getSuccess(req,res,cmd,{"userRequestList":db});
           else{
             logger.summary(req,cmd+'|Not Found UR');
             res.json(resp.getJsonError(error.code_01003,error.desc_01003));
           }
         }).catch((err) => {
           logger.error(req,cmd+'|Error while check UR return|'+err);
-          return resp.getInternalError(req,res,cmd,err);
+          // return resp.getInternalError(req,res,cmd,err);
+          logger.summary(req,cmd+'|'+error.desc_01002);
+          res.json(resp.getJsonError(error.code_01002,error.desc_01002,err));
           // console.log('Error : ' + chalk.red(err));
           // res.json(resp.getJsonError(error.code_01002,error.desc_01002));
         });
@@ -385,12 +349,12 @@ const userRequest = {
         // console.log('UR : '+chalk.blue(JSON.stringify(db)));
         // console.log('UR count : '+chalk.blue(JSON.stringify(db)));
         cmd = 'chkUrData';
-        if(util.chkDataFound(db)){
+        if(util.isDataFound(db)){
           logger.info(req,cmd+'|Found UR|'+JSON.stringify(db));
           
           // console.log('ur_workflows : '+chalk.blue(JSON.stringify(db.ur_workflows)));
           cmd = 'chk urWorkflowList';
-          if(util.chkDataFound(db.urWorkflowList)){
+          if(util.isDataFound(db.urWorkflowList)){
             // logger.info(req,cmd+'|Found UrWorkflow|Change Name');
             // // console.log(chalk.green('=========== Yes ==========='));
             // dbClone.urWorkflowList = db.ur_workflows;
@@ -412,7 +376,9 @@ const userRequest = {
         }
       }).catch((err) => {
         logger.error(req,cmd+'|Error while rearrange data|'+err);
-        return resp.getInternalError(req,res,cmd,err);
+        // return resp.getInternalError(req,res,cmd,err);
+        logger.summary(req,cmd+'|'+error.desc_01002);
+        res.json(resp.getJsonError(error.code_01002,error.desc_01002,err));
         // logger.summary(req,cmd+'|Rearrange Response Data Error');
         // // console.log('Error : ' + chalk.red(err));
         // res.json(resp.getJsonError(error.code_01002,error.desc_01002,err));

@@ -25,7 +25,7 @@ const mVendorProfile = mCfg.sequelize.define('vendor_profile', {
 	email: { type: Sequelize.STRING, field: 'EMAIL', allowNull: false}
 },{freezeTableName: true, timestamps: false});
 
-mVendorProfile.hasMany(mVendorContract, {foreignKey:'vendorId', targetKey:'vendorId'});
+mVendorProfile.hasMany(mVendorContract, {as:'vendorContactList', foreignKey:'vendorId', targetKey:'vendorId'});
 // mVendorProfile.hasMany(mVendorContract);
 
 module.exports = mVendorProfile;

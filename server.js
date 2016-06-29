@@ -38,10 +38,10 @@ app.use((req, res, next) => { //Incoming
 app.use((err, req, res, next) =>{
   logger.incoming(req,err);
   if (err instanceof SyntaxError) {
-    return resp.getIncompleteParameter(req,res,'SyntaxError',err);
-    // logger.summary(req,err);
-    // res.status(err.status || 400);
-    // res.json(resp.getJsonError(error.code_00005, error.desc_00005, err));
+    res.status(err.status || 400);
+    logger.summary(req,'SyntaxError|Incomplete Parameter');
+    return res.json(resp.getJsonError(error.code_00005, error.desc_00005, err.message));
+    // return resp.getIncompleteParameter(req,res,'SyntaxError',err);
   } else next();
 });
 
