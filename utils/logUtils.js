@@ -135,6 +135,6 @@ exports.db = (reqData) =>
     //     stream.write(getDateTimeLogFormat()+' - DB: '+reqData+'\n');
     //     stream.end();
     // });
-    writeLog(logCfg.log.logPath+'/db/'+getLogFileName(),getLogHeader()+'|DB|'+reqData);
+    writeLog(logCfg.log.logDbPath+getLogFileName(),getLogHeader('DB')+'|'+reqData);
 };
 

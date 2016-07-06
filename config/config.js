@@ -17,9 +17,11 @@ config.https.options = {
 };
 
 //DB config
-config.dbName = 'bldgdev';
-config.dbUser = 'admin';
-config.dbPwd = 'P@ssw0rd';
+config.dbName = 'Bldgdev';
+// config.dbUser = 'admin';
+// config.dbPwd = 'P@ssw0rd';
+config.dbUser = 'postgres';
+config.dbPwd = 'postgres';
 config.dbHost = '10.252.163.130';
 config.timeFormat = 'YYYY-MM-DD HH:mm:ss';
 config.poolMax = 5;
@@ -31,7 +33,8 @@ config.allowedHeaders = 'Access-Control-Allow-Headers, Origin, X-Requested-With,
 
 // Log
 config.log = {};
-config.log.logPath = 'logs';
+config.log.logPath = 'logs/';
+config.log.logDbPath = 'logs/db/';
 config.log.projectName = 'BMS';
 config.log.logTime = 15;
 

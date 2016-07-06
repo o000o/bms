@@ -5,40 +5,36 @@ const mCfg = require('../config/modelCfg');
 const mContract = require('./mContract');
 const mUrWf = require('./mUrWorkFlow');
 
-// const mUR = cfg.sequelize.define('USER_REQUEST', {
 const mUR = mCfg.sequelize.define('user_request', {
-	urId: { type: Sequelize.STRING , primaryKey: true, field: 'UR_ID', allowNull: true},
-	contractId: { type: Sequelize.STRING, field: 'CONTRACT_ID', allowNull: true},
-	urDate: { type: Sequelize.DATEONLY, field: 'UR_DATE', allowNull: false, defaultValue: Sequelize.NOW, 
-		get: function()  {
-			// console.log('urDate : ' + this.getDataValue('urDate'));
-		    // return moment(this.getDataValue('urDate')).tz(mCfg.timeZone).format(mCfg.timeFormat);
-		    return mCfg.correctTime(this.getDataValue('urDate'));
-	    }
+	urId: {type: Sequelize.STRING , primaryKey: true, field: 'ur_id', allowNull: false, defaultValue: Sequelize.fn('geturid')},
+	contractId: {type: Sequelize.STRING, field: 'contract_id', allowNull: true},
+	urDate: {type: Sequelize.DATEONLY, field: 'ur_date', allowNull: false, defaultValue: Sequelize.NOW, 
+		get: function()  {return mCfg.correctTime(this.getDataValue('urDate'));}
 	},
-	urType: { type: Sequelize.STRING, field: 'UR_TYPE', allowNull: false},
-	company: { type: Sequelize.STRING, field: 'COMPANY', allowNull: false },
-	department: { type: Sequelize.STRING, field: 'DEPARTMENT', allowNull: true },
-	urDetail: { type: Sequelize.STRING, field: 'UR_DETAIL', allowNull: false },
-	expectDate: { type: Sequelize.DATEONLY, field: 'EXPECT_DATE', allowNull: false, 
+	urType: {type: Sequelize.STRING, field: 'ur_type', allowNull: false},
+	company: {type: Sequelize.STRING, allowNull: false },
+	department: {type: Sequelize.STRING, allowNull: true },
+	urDetail: {type: Sequelize.STRING, field: 'ur_detail', allowNull: false },
+	expectDate: {type: Sequelize.DATEONLY, field: 'expect_date', allowNull: false, 
 		get: function()  {return mCfg.correctTime(this.getDataValue('expectDate'));}
 	},
-	urBy: { type: Sequelize.STRING, field: 'UR_BY', allowNull: false},
-	urStatus: { type: Sequelize.STRING, field: 'UR_STATUS', allowNull: false},
-	// approveBy: { type: Sequelize.STRING, field: 'APPROVE_BY', allowNull: true},
-	rentalObjective: { type: Sequelize.STRING, field: 'RENTAL_OBJ', allowNull: true},
-	areaSize: { type: Sequelize.DOUBLE, field: 'AREA_SIZE', allowNull: true},
-	unitArea: { type: Sequelize.STRING, field: 'UNIT_AREA', allowNull: true},
-	empTotal: { type: Sequelize.INTEGER, field: 'EMP_TOTAL', allowNull: true},
-	rentalDayAmount: { type: Sequelize.STRING, field: 'RENTAL_USE_AMOUNT', allowNull: true},
-	amphur: { type: Sequelize.STRING, field: 'AMPHUR', allowNull: true},
-	province: { type: Sequelize.STRING, field: 'PROVINCE', allowNull: true},
-	region: { type: Sequelize.STRING, field: 'REGION', allowNull: true}
+	urBy: {type: Sequelize.STRING, field: 'ur_by', allowNull: false},
+	urStatus: {type: Sequelize.STRING, field: 'ur_status', allowNull: false},
+	rentalObjective: {type: Sequelize.STRING, field: 'rental_obj', allowNull: true},
+	areaSize: {type: Sequelize.REAL, field: 'area_size', allowNull: true},
+	unitArea: {type: Sequelize.STRING, field: 'unit_area', allowNull: true},
+	empTotal: {type: Sequelize.INTEGER, field: 'emp_total', allowNull: true},
+	rentalDayAmount: {type: Sequelize.STRING, field: 'rental_use_amount', allowNull: true},
+	amphur: {type: Sequelize.STRING, allowNull: true},
+	province: {type: Sequelize.STRING, allowNull: true},
+	region: {type: Sequelize.STRING, allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
-// mUR.belongsTo(mContract, {foreignKey:'CONTRACT_ID'});
-// mUR.hasMany(mUrWf, { foreignKey:'UR_ID'}); //work
-mUR.hasMany(mUrWf, {as:'urWorkflowList', foreignKey:'urId', targetKey:'urId'}); //work
+mUR.hasMany(mUrWf, {as:'urWorkflowList',foreignKey:{name:'urId',field: 'ur_id'}});
+
+// mUR.hasMany(mUrWf, {foreignKey:'ur_id'}); //work
+// mUR.hasMany(mUrWf, {as:'urWorkflowList', foreignKey:'urId', targetKey:'urId'}); //work
+// mUrWf.belongsTo(mUR, {foreignKey:'urId', targetKey:'urId'});
 // mUR.hasMany(mUrWf, { as:'ooo',foreignKey:'UR_ID'}); //Error
 // mUR.hasMany(mUrWf); //add "userRequestUrId" which not exist in mUrWf
 // mUR.hasMany(mUrWf); //Error : SequelizeDatabaseError: ER_BAD_FIELD_ERROR: Unknown column 'ur_workflows.userRequestUrId' in 'field list'

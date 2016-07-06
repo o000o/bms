@@ -11,7 +11,7 @@ const mUR = require('../models/mUR');
 const mUrWf = require('../models/mUrWorkFlow');
 const cfg = require('../config/config');
 const mCfg = require('../config/modelCfg');
-const async = require("async");
+const async = require('async');
 
 const notification = {
 
@@ -58,16 +58,16 @@ GROUP BY ur.UR_STATUS;
       logger.info(req,cmd+'|decoded:'+JSON.stringify(decoded));
 
       let rawQs = [];
-      rawQs.push("SELECT '" + con.myUr + "' as 'groupName', ur_status as status, COUNT(*) as total "
+      rawQs.push("SELECT '" + con.myUr + "' as \"groupName\", ur_status as status, COUNT(*) as total "
       + "FROM user_request WHERE ur_by = '" + decoded.userName + "' GROUP BY ur_status;");
 
       if(con.admin.indexOf(decoded.userType)>=0){
-        rawQs.push("SELECT '" + con.Ur + "' as 'groupName',ur.ur_status as status, COUNT(*) as total "
+        rawQs.push("SELECT '" + con.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
         + "WHERE ur.UR_ID = urw.UR_ID AND (ur.UR_STATUS='" + con.dmApproved + "' OR (urw.UPDATE_BY= '" + decoded.userName
         + "' AND (urw.UR_STATUS='" + con.adminAccept + "' or urw.UR_STATUS='" + con.complete + "'))) GROUP BY ur.UR_STATUS;");
       }else if(con.dm.indexOf(decoded.userType)>=0){ 
-        rawQs.push("SELECT '" + con.Ur + "' as 'groupName',ur.ur_status as status, COUNT(*) as total "
+        rawQs.push("SELECT '" + con.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
         + "WHERE ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY= '" + decoded.userName 
         + "' AND urw.UR_STATUS= '" + con.dmApproved + "' GROUP BY ur.UR_STATUS;");
