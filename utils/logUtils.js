@@ -130,11 +130,6 @@ exports.summary = (reqData, errMsg) =>
 
 exports.db = (reqData) =>
 {
-    // var stream = fs.createWriteStream(logCfg.log.logPath+'/db/'+getLogFileName(), {'flags': 'a'});
-    // stream.once('open', (fd) => {
-    //     stream.write(getDateTimeLogFormat()+' - DB: '+reqData+'\n');
-    //     stream.end();
-    // });
-    writeLog(logCfg.log.logDbPath+getLogFileName(),getLogHeader('DB')+'|'+reqData);
+    writeLog(logCfg.log.logDbPath+'/'+getLogFileName(),getLogHeader('DB')+'|'+reqData);
 };
 

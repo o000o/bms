@@ -6,8 +6,10 @@
   "dependencies": {
     "body-parser": "^1.15.0",
     "chalk": "^1.1.1",
+    "cheerio": "^0.20.0",
     "cors": "^2.7.1",
     "express": "^4.13.4",
+    "express-interceptor": "^1.2.0",
     "fs": "0.0.2",
     "jwt-simple": "^0.4.1"
   },

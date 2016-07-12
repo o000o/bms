@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('./auth.js');
 const location = require('./location.js');
+const locationD = require('./locationDetail.js');
 const contract = require('./contract.js');
 const vendorProfile = require('./vendorProfile.js');
 const userRequest = require('./userRequest.js');
@@ -37,11 +38,11 @@ router.put('/userRequest/updateStatus', userRequest.updateStatus);
 // ============================================================================
 // Location Master
 // ============================================================================
-router.post('/location', location.add);
-router.put('/location', location.edit);
-router.get('/location', location.query);
-router.post('/getLocation', location.queryByCriteria);
-router.get('/location/:buildingId', location.queryById);
+router.post('/locationDetail', locationD.add);
+router.put('/locationDetail', locationD.edit);
+// router.get('/location', location.query);
+router.post('/location', location.queryByCriteria);
+// router.get('/location/:buildingId', location.queryById);
 // router.delete('/location:buildingId', location.delete);
 
 // ============================================================================

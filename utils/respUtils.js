@@ -4,12 +4,14 @@ const logger = require('./logUtils');
 const cfg = require('../config/config');
 
 exports.getJsonError = (errCode, errMsg, devMsg) => {
-	if(cfg.devMsg) return { responseStatus: { responseCode: errCode, responseMessage: errMsg}, devMessage : devMsg};
-	else return { responseStatus: { responseCode: errCode, responseMessage: errMsg}};
+	if(cfg.devMsg){
+		if(devMsg!=null && devMsg.message) devMsg=devMsg.message;
+		return {responseStatus:{responseCode:errCode, responseMessage:errMsg}, devMessage:devMsg};
+	}else return {responseStatus:{responseCode:errCode, responseMessage:errMsg}};
 }
 
 exports.getJsonSuccess = (errCode, errMsg, resObj) => {
-	return { responseStatus: { responseCode: errCode, responseMessage: errMsg}, responseData : resObj};
+	return {responseStatus: {responseCode: errCode, responseMessage: errMsg}, responseData : resObj};
 }
 
 exports.getInvalidToken = (req,res,cmd,err) => {
@@ -23,21 +25,21 @@ exports.getInvalidUser = (req,res,cmd,err) => {
 	logger.summary(req,cmd+'|Invalid User');
 	if(err!=null)res.status(err.status || 401);
 	else res.status(401);
-    res.json(this.getJsonError(error.code_00001, error.desc_00001, err));
+	res.json(this.getJsonError(error.code_00001, error.desc_00001, err));
 }
 
 exports.getInternalError = (req,res,cmd,err) => {
 	logger.summary(req,cmd+'|Undefined Internal Error');
 	if(err!=null)res.status(err.status || 500);
 	else res.status(500);
-    res.json(this.getJsonError(error.code_00003, error.desc_00003, err));
+	res.json(this.getJsonError(error.code_00003, error.desc_00003, err));
 }
 
 exports.getIncompleteParameter = (req,res,cmd,err) => {
 	logger.summary(req,cmd+'|Incomplete Parameter');
 	if(err!=null)res.status(err.status || 400);
 	else res.status(400);
-    res.json(this.getJsonError(error.code_00005, error.desc_00005, err));
+	res.json(this.getJsonError(error.code_00005, error.desc_00005, err));
 }
 
 exports.getSuccess = (req,res,cmd,resObj) => {

@@ -29,20 +29,22 @@ config.poolMax = 5;
 // Cors
 config.origin = '*';
 config.methods = 'GET,PUT,POST,DELETE,OPTIONS';
-config.allowedHeaders = 'Access-Control-Allow-Headers, Origin, X-Requested-With, Content-Type, Accept, X-Language, x-biz-language, X-Session, x-userTokenId, x-userMobileNo, Pragma, Cache-Control, If-Modified-Since';
+config.allowedHeaders = 'Access-Control-Allow-Headers, Origin, X-Requested-With, Content-Type, Accept, X-Language, X-Session, x-userTokenId, Pragma, Cache-Control, If-Modified-Since';
 
 // Log
 config.log = {};
 config.log.logPath = 'logs/';
-config.log.logDbPath = 'logs/db/';
+config.log.logDbPath = 'logs/db';
 config.log.projectName = 'BMS';
 config.log.logTime = 15;
 
 // Token
-config.expires = 30; // minute
+config.expires = 30; // minutes
+config.renewTokenTime = 29; // minutes, time left before token expire
+config.interceptRespCode = ['00000','01001','01002','01003','01004']; //responseCode that will get new Token
 
 // Regular Format
-config.regUserName = /^[a-zA-Z0-9]+$/;
+// config.regUserName = /^[a-zA-Z0-9]+$/;
 config.regDigit = /^[0-9]+$/;
 
 // Response Json

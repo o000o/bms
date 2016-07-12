@@ -11,7 +11,7 @@ error.desc_00000 = 'Success.';
 
 // Error Code Internal
 error.code_00001 = '00001';
-error.desc_00001 = 'Wrong user or passowrd.';
+error.desc_00001 = 'Wrong user or password.';
 error.code_00002 = '00002';
 error.desc_00002 = 'Invalid token.';
 error.code_00003 = '00003';

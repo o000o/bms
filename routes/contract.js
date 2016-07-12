@@ -18,7 +18,7 @@ const contract = {
       // console.log(chalk.green('=========== Add Contract ==========='));
       // console.log('Request Body : ' + chalk.blue(JSON.stringify(req.body, undefined, 2)));
       // const jWhere = {contractNo: req.body.requestData.contractNo, contractDate: req.body.requestData.contractDate};
-      const jWhere = { vendorType: req.body.requestData.vendorType, vendorName1: req.body.requestData.vendorName1};
+      const jWhere = {vendorType: req.body.requestData.vendorProfile.vendorType, vendorName1: req.body.requestData.vendorProfile.vendorName1};
       // console.log('jWhere : '+chalk.blue(JSON.stringify(jWhere)));
       logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
 
@@ -56,11 +56,9 @@ const contract = {
       // })
 
       // mVendorProfile.create(req.body.requestData.vendorProfile, {
-      mVendorProfile.findOrCreate({where:jWhere, defaults:req.body.requestData.vendorProfile}, {
-        include: [{
-          model: mVendorContact,
-          as: 'vendorContactList'
-        }]})
+      mVendorProfile.findOrCreate({where:jWhere, defaults:req.body.requestData.vendorProfile,
+        include: [{model: mVendorContact, as:'vendorContactList'}]
+      })
       // .then((succeed) => {
       .spread((db,succeed) => {
         return resp.getSuccess(req,res,cmd,succeed);

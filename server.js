@@ -30,6 +30,9 @@ app.use(cors(corsPolicy));
 
 // app.all([require('./utils/logUtils')],incoming()); //Not Work
 
+// Add the interceptor middleware 
+app.use('/bms/*', [require('./middlewares/interceptResponse')]);
+
 app.use((req, res, next) => { //Incoming
   logger.incoming(req);
   next();
@@ -38,10 +41,10 @@ app.use((req, res, next) => { //Incoming
 app.use((err, req, res, next) =>{
   logger.incoming(req,err);
   if (err instanceof SyntaxError) {
-    res.status(err.status || 400);
-    logger.summary(req,'SyntaxError|Incomplete Parameter');
-    return res.json(resp.getJsonError(error.code_00005, error.desc_00005, err.message));
-    // return resp.getIncompleteParameter(req,res,'SyntaxError',err);
+    // res.status(err.status || 400);
+    // logger.summary(req,'SyntaxError|Incomplete Parameter');
+    // return res.json(resp.getJsonError(error.code_00005, error.desc_00005, err.message));
+    return resp.getIncompleteParameter(req,res,'SyntaxError',err);
   } else next();
 });
 
@@ -67,10 +70,10 @@ app.use((req, res, next) => {
 // Catch 500 Error
 app.use((err, req, res, next) => {
   logger.error(req,err);
-  res.status(err.status || 500);
-  logger.summary(req,'Server Catch 500 Error');
-  return res.json(resp.getJsonError(error.code_00003, error.desc_00003, err.message));
-  // resp.getInternalError(req,res,'Server Catch 500',err);
+  // res.status(err.status || 500);
+  // logger.summary(req,'Server Catch 500 Error');
+  // return res.json(resp.getJsonError(error.code_00003, error.desc_00003, err.message));
+  return resp.getInternalError(req,res,'Server Catch 500',err);
   // res.json(resp.getJsonError(error.code_00003, error.desc_00003, err));
 });
 
