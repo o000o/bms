@@ -6,22 +6,6 @@ const util = require('../utils/bmsUtils');
 const jwt = require('jwt-simple');
 
 const utils = {
-
-	// chkUserName: (strUserName) => {
- //    	(strUserName && cfg.regUserName.test(strUserName)) ? return true : return false;
-	// },
-
-	// chkDigit: (strDigit) => {
-	// 	(strDigit && cfg.regDigit.test(strDigit)) ? return true : return false;
-	// },
-
-	// setTotalRecord: (resObj,strObjName) => {
-	// 	      console.log('strObjName : '+(Object.keys(strObjName)));
- //      console.log('strObjName typeof : ' + (typeof strObjName));
-	// 	return {totalRecord: resObj.count, strObjName: resObj.rows};
-
-	// },
-
 	simpleStringify: (object) => {
 	    var simpleObject = {};
 	    for (var prop in object ){
@@ -40,13 +24,9 @@ const utils = {
 	},
 
 	isDataFound: (resObj) => {
-		// console.log('resObj: ' + resObj);
 		if(resObj==null || resObj=='undefined'){
 			return false;
 		}else{
-			// console.log('resObj.length: ' + resObj.length);
-			// console.log('resObj JSON : '+JSON.stringify(resObj));
-			// console.log('resObj JSON : '+JSON.stringify(resObj).length);
 			if(resObj.length) return true;
 			else {
 				if (JSON.stringify(resObj).length>2) return true;
@@ -58,9 +38,9 @@ const utils = {
 	isDigit: (strDigit) => {
 	//(strDigit && cfg.regDigit.test(strDigit)) ? return true : return false;
 		if(strDigit && cfg.regDigit.test(strDigit)){
-		     return true;
+		    return true;
 		}else{
-		     return false;
+		    return false;
 		}
 	},
 
@@ -91,15 +71,6 @@ const utils = {
 			return err.message;
 		}
 	},
-
-	// getPassword: (token) => {
-	// 	try {
-	// 		const decoded = jwt.decode(token, shhh());
-	// 	    return decoded.password;
-	// 	}catch (err){
-	// 		return err.message;
-	// 	}
-	// },
 
 	getExpireTime: (token) => {
 		try {

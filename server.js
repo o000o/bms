@@ -30,9 +30,6 @@ app.use(cors(corsPolicy));
 
 // app.all([require('./utils/logUtils')],incoming()); //Not Work
 
-// Add the interceptor middleware 
-app.use('/bms/*', [require('./middlewares/interceptResponse')]);
-
 app.use((req, res, next) => { //Incoming
   logger.incoming(req);
   next();
@@ -48,13 +45,16 @@ app.use((err, req, res, next) =>{
   } else next();
 });
 
+app.get('/bms/logout/user', auth.logout);
+app.post('/bms/login/user', auth.login);
+
 // Auth Middleware - This will check if the token is valid
 // Only the requests that start with /api/v1/* will be checked for the token.
 // Any URL's that do not follow the below pattern should be avoided unless you
 // are sure that authentication is not needed
-app.get('/bms/logout/user', auth.logout);
-app.post('/bms/login/user', auth.login);
 // app.all('/bms/*', [require('./middlewares/validateRequest')]);
+// Add the interceptor middleware for renew token
+app.use('/bms/*', [require('./middlewares/interceptResponse')]);
 app.use('/bms/', require('./routes'));
 // app.get('/bizlivekeepAlive/user', keepAlive.register);
 

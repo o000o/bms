@@ -50,6 +50,7 @@ module.exports = (req, res, next) => {
       mUser.findOne({where:jWhere}).then((user) => {
         if(util.isDataFound(user)){
           logger.info(req,cmd+'|Found User');
+          // req.body.token = JSON.parse(JSON.stringify(decoded));
           next(); // To move to next middleware    
         }else{
           //Wrong Token lead to wrong user
