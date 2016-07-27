@@ -2,11 +2,11 @@
 
 const Sequelize = require('sequelize');
 const mCfg = require('../config/modelCfg');
+const cst = require('../config/constant');
 const mUrWf = require('./mUrWorkFlow');
 
 const mUR = mCfg.sequelize.define('user_request', {
 	urId: {type: Sequelize.STRING , primaryKey: true, field: 'ur_id', allowNull: false, defaultValue: Sequelize.fn('geturid')},
-	// contractId: {type: Sequelize.STRING, field: 'contract_id', allowNull: true},
 	urDate: {type: Sequelize.DATEONLY, field: 'ur_date', allowNull: false, defaultValue: Sequelize.NOW, 
 		get: function()  {return mCfg.correctTime(this.getDataValue('urDate'));}
 	},
@@ -30,7 +30,7 @@ const mUR = mCfg.sequelize.define('user_request', {
 	contractId: {type: Sequelize.STRING, field: 'contract_id', allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
-mUR.hasMany(mUrWf, {as:'urWorkflowList',foreignKey:{name:'urId',field: 'ur_id'}});
+mUR.hasMany(mUrWf, {as:cst.models.urWorkflows,foreignKey:'urId', targetKey:'urId'});
 
 // mUR.hasMany(mUrWf, {foreignKey:'ur_id'}); //work
 // mUR.hasMany(mUrWf, {as:'urWorkflowList', foreignKey:'urId', targetKey:'urId'}); //work

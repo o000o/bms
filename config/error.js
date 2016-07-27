@@ -32,3 +32,9 @@ error.code_01003 = '01003';
 error.desc_01003 = 'Data not found.';
 error.code_01004 = '01004';
 error.desc_01004 = 'Data already exist.';
+
+// Error Code OM
+error.code_03001 = '03001';
+error.desc_03001 = 'OM error.';
+error.code_03002 = '03002';
+error.desc_03002 = 'OM data not found.';

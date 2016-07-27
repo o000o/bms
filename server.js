@@ -56,7 +56,6 @@ app.post('/bms/login/user', auth.login);
 // Add the interceptor middleware for renew token
 app.use('/bms/*', [require('./middlewares/interceptResponse')]);
 app.use('/bms/', require('./routes'));
-// app.get('/bizlivekeepAlive/user', keepAlive.register);
 
 // If no route is matched by now, it must be a 404
 app.use((req, res, next) => {

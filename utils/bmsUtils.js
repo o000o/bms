@@ -2,45 +2,60 @@
 
 const cfg = require('../config/config');
 const shhh = require('../config/secret.js');
-const util = require('../utils/bmsUtils');
+// const logger = require('./logUtils');
 const jwt = require('jwt-simple');
 
 const utils = {
-	simpleStringify: (object) => {
-	    var simpleObject = {};
-	    for (var prop in object ){
-	        if (!object.hasOwnProperty(prop)){
-	            continue;
-	        }
-	        if (typeof(object[prop]) == 'object'){
-	            continue;
-	        }
-	        if (typeof(object[prop]) == 'function'){
-	            continue;
-	        }
-	        simpleObject[prop] = object[prop];
-	    }
-	    return JSON.stringify(simpleObject); // returns cleaned up JSON
+	simpleStringify: (object) => { //not use
+		try{
+		    var simpleObject = {};
+		    for (var prop in object ){
+		        if (!object.hasOwnProperty(prop)){
+		            continue;
+		        }
+		        if (typeof(object[prop]) == 'object'){
+		            continue;
+		        }
+		        if (typeof(object[prop]) == 'function'){
+		            continue;
+		        }
+		        simpleObject[prop] = object[prop];
+		    }
+		    return JSON.stringify(simpleObject); // returns cleaned up JSON
+		}catch(err){
+			// logger.error('bmsUtils|simpleStringify|'+err);
+			return err.message;
+		}
 	},
 
 	isDataFound: (resObj) => {
-		if(resObj==null || resObj=='undefined'){
-			return false;
-		}else{
-			if(resObj.length) return true;
-			else {
-				if (JSON.stringify(resObj).length>2) return true;
-				else return false;
+		try{
+			if(resObj==null || resObj=='undefined' || resObj==''){
+				return false;
+			}else{
+				if(resObj.length) return true;
+				else {
+					if (JSON.stringify(resObj).length>2) return true;
+					else return false;
+				}
 			}
+		}catch(err){
+			// logger.error('bmsUtils|idDataFound|'+err);
+			return false;
 		}
 	},
 
 	isDigit: (strDigit) => {
+		try{
 	//(strDigit && cfg.regDigit.test(strDigit)) ? return true : return false;
-		if(strDigit && cfg.regDigit.test(strDigit)){
-		    return true;
-		}else{
-		    return false;
+			if(strDigit && cfg.regDigit.test(strDigit)){
+			    return true;
+			}else{
+			    return false;
+			}
+		}catch(err){
+			// logger.error('bmsUtils|isDigit|'+err);
+			return false;
 		}
 	},
 
@@ -57,7 +72,8 @@ const utils = {
 		      exp: expire
 		    }, shhh());
 		    return userTokenId;
-		}catch (err){
+		}catch(err){
+			// logger.note('bmsUtils|getToken|'+err);
 			return err.message;
 		}
 
@@ -67,7 +83,8 @@ const utils = {
 		try {
 			const decoded = jwt.decode(token, shhh());
 		    return decoded.userName;
-		}catch (err){
+		}catch(err){
+			// logger.note('bmsUtils|getUserName|'+err);
 			return err.message;
 		}
 	},
@@ -76,7 +93,8 @@ const utils = {
 		try {
 			const decoded = jwt.decode(token, shhh());
 		    return decoded.exp;
-		}catch (err){
+		}catch(err){
+			// logger.error('bmsUtils|getExpireTime|'+err);
 			return err.message;
 		}
 	},
@@ -84,10 +102,11 @@ const utils = {
 	extractToken: (token) => {
 		try {
 		    return jwt.decode(token, shhh());
-		}catch (err){
+		}catch(err){
+			// logger.error('bmsUtils|extractToken|'+err);
 			return err.message;
 		}
-	},
+	}
 }
 
 

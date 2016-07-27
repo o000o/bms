@@ -1,6 +1,7 @@
 'use strict'
 const Sequelize = require('sequelize');
 const mCfg = require('../config/modelCfg');
+const cst = require('../config/constant');
 const mBuildingArea = require('./mBuildingArea');
 const mBuildingDetail = require('./mBuildingDetail');
 
@@ -18,7 +19,7 @@ const mBuildingLocation = mCfg.sequelize.define('building_location', {
 	location: { type: Sequelize.STRING, allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
-mBuildingLocation.hasMany(mBuildingArea, {as:'areaList',foreignKey:{name:'buildingId',field:'building_id'}});
-mBuildingArea.hasMany(mBuildingDetail, {as:'detailList',foreignKey:{name:'buildingAreaId',field:'ba_id'}});
+mBuildingLocation.hasMany(mBuildingArea, {as:cst.models.locationAreas,foreignKey:'buildingId',targetKey:'buildingId'});
+mBuildingArea.hasMany(mBuildingDetail, {as:cst.models.areaDetails,foreignKey:'buildingAreaId',targetKey:'buildingAreaId'});
 
 module.exports = mBuildingLocation;

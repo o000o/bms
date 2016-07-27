@@ -22,8 +22,14 @@ module.exports = (req, res, next) => {
   // var key = (req.body && req.body.x_key) || (req.query && req.query.x_key) || req.headers['x-userTokenId'];
   // var token =  req.headers('x-userTokenId');
   let flagT = 0;
-  let cmd = 'chkToken';
+  let cmd = 'chkRequestData';
   try {
+    if(!util.isDataFound(req.body.requestData)&&(req.method=="POST"||req.method=="PUT")){
+      let err ='No requestData'
+      logger.info(req,cmd+'|'+err);
+      return resp.getIncompleteParameter(req,res,cmd,err);
+    }
+    cmd = 'chkToken';
     let token = req.header('x-userTokenId');
     // console.log('Token : '+chalk.blue(token));
     logger.info(req,cmd+'|Token:'+token);

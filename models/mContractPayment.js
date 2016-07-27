@@ -4,8 +4,8 @@ const Sequelize = require('sequelize');
 const mCfg = require('../config/modelCfg');
 
 const mCtPayment = mCfg.sequelize.define('contract_payment', {
-	cpId: {type: Sequelize.INTEGER, field: 'cp_id', primaryKey: true, allowNull: false, autoIncrement: true},
-	contractId: {type: Sequelize.STRING, field: 'contract_id', primaryKey: true, allowNull: false, defaultValue: Sequelize.fn('getcontractid')},
+	contractPaymentId: {type: Sequelize.INTEGER, field: 'cp_id', primaryKey: true, allowNull: false, autoIncrement: true},
+	contractId: {type: Sequelize.STRING, field: 'contract_id', primaryKey: true, allowNull: false},
 	paymentType: {type: Sequelize.STRING, field: 'payment_type', allowNull: false},
 	paymentDetail: {type: Sequelize.STRING, field: 'payment_detail', allowNull: true},
 	startDate: {type: Sequelize.DATEONLY, field: 'start_date', allowNull: true,

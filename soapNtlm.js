@@ -12,8 +12,8 @@ var options = {
     }
 };
 
-var args = {OmCode: 'OMTESTBMS',Username: 'siripoko'}
-
+// var args = {OmCode: 'OMTESTBMS',Username: 'siripoko'}
+var args ={"OmCode":"OMTESTBMS","Username":"Signature verification failed"}
 soap.createClient(__dirname + '/config/om.wsdl', options, (err, client, body)=>{
     if (err) {
         console.log(err);
@@ -26,8 +26,8 @@ soap.createClient(__dirname + '/config/om.wsdl', options, (err, client, body)=>{
             parser.parseString(result.OM_WS_GetEmployeeAndMgrByUserResult, (err, dataJsonStr)=>{
               console.log(dataJsonStr.NewDataSet.Permission[0].MsgDetail[0]); // Get Status Success
               console.log(dataJsonStr.NewDataSet);
-              console.log(dataJsonStr.NewDataSet.Table[0].APPROVAL_EMAIL[0]); // Get Email
-              console.log(dataJsonStr.NewDataSet.Table[0]);
+              // console.log(dataJsonStr.NewDataSet.Table[0].APPROVAL_EMAIL[0]); // Get Email
+              // console.log(dataJsonStr.NewDataSet.Table[0]);
             });
           }
         }, {timeout: 10000}); //10 Sec

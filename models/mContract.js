@@ -2,15 +2,23 @@
 
 const Sequelize = require('sequelize');
 const mCfg = require('../config/modelCfg');
+const cst = require('../config/constant');
 const mVendorProfile = require('./mVendorProfile');
+const mVendorContact = require('./mVendorProfileContact');
+const mBuildingLocation = require('./mBuildingLocation');
+const mBuildingArea = require('./mBuildingArea');
+const mDocument = require('./mDocument');
+const mPayment = require('./mContractPayment');
+const mContractAgent = require('./mContractAgent');
 
-// const mContract = cfg.sequelize.define('CONTRACT', {
 const mContract = mCfg.sequelize.define('contract', {
-	// CONTRACT_ID: { type: Sequelize.UUID , primaryKey: true, defaultValue: Sequelize.UUIDV1, allowNull: false},
 	contractId: { type: Sequelize.STRING, field: 'contract_id', primaryKey: true, allowNull: false, defaultValue: Sequelize.fn('getcontractid')},
-	vendorId: { type: Sequelize.INTEGER, field: 'vendor_id', allowNull: false },
+	vendorId: { type: Sequelize.INTEGER, field: 'vendor_id', allowNull: true },
 	contractNo: { type: Sequelize.STRING, field: 'contract_no', allowNull: false},
-	contractDate: { type: Sequelize.DATEONLY, field: 'contract_date', allowNull: false, 
+	createContractDate: { type: Sequelize.DATEONLY, field: 'create_contract_date', allowNull: false, defaultValue: Sequelize.NOW,
+		get: function() {return mCfg.correctTime(this.getDataValue('createContractDate'));}
+	},
+	contractDate: { type: Sequelize.DATEONLY, field: 'contract_date', allowNull: false,
 		get: function() {return mCfg.correctTime(this.getDataValue('contractDate'));}
 	},
 	startDate: { type: Sequelize.DATEONLY, field: 'start_date', allowNull: false,
@@ -26,6 +34,16 @@ const mContract = mCfg.sequelize.define('contract', {
 	oldContractId: { type: Sequelize.STRING, field: 'old_contract_id', allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
-mContract.belongsTo(mVendorProfile, {as:'vendorProfile', foreignKey:'vendorId', targetKey:'vendorId'});
+mContract.belongsTo(mVendorProfile, {as:cst.models.vendorProfile, foreignKey:'vendorId', targetKey:'vendorId'});
+mContract.hasMany(mPayment, {as:cst.models.contractPayments, foreignKey:'contractId', targetKey:'contractId'});
+mContract.hasMany(mDocument, {as:cst.models.documents, foreignKey:'contractId', targetKey:'contractId'});
+mContract.belongsToMany(mBuildingLocation, {as:cst.models.locations, 
+	through:{model:mBuildingArea, as:cst.models.area},//, unique: false}, constraints: false,
+	foreignKey:'contractId', 
+	otherKey:'buildingId'});
+mContract.belongsToMany(mVendorContact, {as:cst.models.contractAgents, 
+	through:{model:mContractAgent, as:cst.models.agent},
+	foreignKey:'contractId', 
+	otherKey:'vendorContactId'});
 
 module.exports = mContract;

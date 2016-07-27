@@ -1,6 +1,5 @@
 'use strict'
-// const response = require('../response/broadcastResponse.js');
-const chalk = require('chalk');
+
 const resp = require('../utils/respUtils');
 const util = require('../utils/bmsUtils');
 const logger = require('../utils/logUtils');
@@ -83,13 +82,10 @@ GROUP BY ur.UR_STATUS;
           ).then((dbs) => {
             logger.info(req,cmd+'|SQL:'+rawQ+'|DBs:'+ JSON.stringify(dbs));
             if(util.isDataFound(dbs)) dbs.forEach((value) => {resData.push(value);});
-            
             callback();
-            // return resp.getSuccess(req,res,cmd,dbs);  
           }).catch((err) => {
             logger.error(req,cmd+'|Error while count UR|'+err);
             callback(err);
-            // return resp.getInternalError(req,res,cmd,err);;
           })
               
         },
@@ -106,185 +102,8 @@ GROUP BY ur.UR_STATUS;
     }catch(err){
       logger.error(req,cmd+'|'+err);
       return resp.getInternalError(req,res,cmd,err);
-      // console.log('Error : ' + chalk.red(err));
-      // res.json(resp.getJsonError(error.code_00003,error.desc_00003));
     }
   }
 };
-
-
-
-//   ur: (req, res) => { //sequelize query
-//     let cmd = 'urNotification';
-//     try{
-//       logger.info(req,cmd+'|token:'+req.header('x-userTokenId'));
-//       cmd = 'extractToken';
-//       const decoded = util.extractToken(req.header('x-userTokenId'));
-//       logger.info(req,cmd+'|decoded:'+JSON.stringify(decoded));
-
-// /**********count myUr*************/
-//       // cmd = 'countMyUR';
-//       // mUR.findAll({where:{urBy:decoded.userName},group: ['urStatus'],
-//       //   attributes: ['urStatus',
-//       //     [mCfg.sequelize.fn('count', mCfg.sequelize.col('*')),'count']]
-//       // }).then((dbs) => {
-//       //   logger.info(req,cmd+'|DBs:'+ JSON.stringify(dbs));
-//       //   cmd = 'chkDB';
-//       //   let dbClone = JSON.parse(JSON.stringify(dbs));
-//       //   if(util.isDataFound(dbs)){
-//       //     let i = 1;
-//       //     cmd = 'addGroup';
-//       //     dbClone.forEach((value) => {
-//       //       value.group=con.myUr;
-//       //     });
-
-//       //   }
-//       //   logger.info(req,cmd+'|DBs with group:'+ JSON.stringify(dbClone));
-// // switch(expression) {
-// //     case n:
-// //         code block
-// //         break;
-// //     case n:
-// //         code block
-// //         break;
-// //     default:
-// //         default code block
-// // } 
-//       //   return resp.getSuccess(req,res,cmd,dbClone);
-//       // }).catch((err) => {
-//       //   logger.error(req,cmd+'|Error when findAll mUR|'+err);
-//       //   return resp.getInternalError(req,res,cmd,err);
-//       //   // console.log('Error : ' + chalk.red(err));
-//       //   // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
-//       // })
-
-
-// /****************dmUR*************/
-//       // cmd = 'countdmUR';
-//       // mUR.findAll({group: ['urStatus'],
-//       //   attributes: ['urStatus',
-//       //     [mCfg.sequelize.fn('count', mCfg.sequelize.col('*')),'count']],
-//       //   include:[{model:mUrWf, as: 'urWorkflowList',attributes: [],
-//       //     where: {updateBy:decoded.userName, urStatus:con.wDmApproval}}]
-//       // }).then((dbs) => {
-//       //   logger.info(req,cmd+'|DBs:'+ JSON.stringify(dbs));
-//       //   cmd = 'chkDB';
-//       //   let dbClone = JSON.parse(JSON.stringify(dbs));
-//       //   if(util.isDataFound(dbs)){
-//       //     let i = 1;
-//       //     cmd = 'addGroup';
-//       //     dbClone.forEach((value) => {
-//       //       value.group=con.Ur;
-//       //     });
-
-//       //   }
-//       //   logger.info(req,cmd+'|DBs with group:'+ JSON.stringify(dbClone));
-
-//       //   return resp.getSuccess(req,res,cmd,dbClone);
-//       // }).catch((err) => {
-//       //   logger.error(req,cmd+'|Error when findAll mUR|'+err);
-//       //   return resp.getInternalError(req,res,cmd,err);
-//       //   // console.log('Error : ' + chalk.red(err));
-//       //   // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
-//       // })
-
-
-// /****************adminUR1*************/
-//       // cmd = 'countAdminUR';
-//       // mUR.findAll({group: ['urStatus'],
-//       //   attributes: ['urStatus',
-//       //     [mCfg.sequelize.fn('count', mCfg.sequelize.col('*')),'count']],
-//       //   include:[{model:mUrWf, as: 'urWorkflowList',attributes: [],
-//       //     // where: {$or: [{updateBy:decoded.userName, urStatus:con.adminAccept},mCfg.sequelize.col('user_request'.'urStatus'):{$like: con.dmApproved}]}}]
-//       //     where: {updateBy:decoded.userName, $or:[{urStatus:con.adminAccept},{urStatus:con.complete}]}
-//       //   }]
-//       // }).then((dbs) => {
-//       //   logger.info(req,cmd+'|DBs:'+ JSON.stringify(dbs));
-//       //   cmd = 'chkDB';
-//       //   let dbClone = JSON.parse(JSON.stringify(dbs));
-//       //   if(util.isDataFound(dbs)){
-//       //     let i = 1;
-//       //     cmd = 'addGroup';
-//       //     dbClone.forEach((value) => {
-//       //       value.group=con.Ur;
-//       //     });
-//       //     mUR.count({where:{urStatus:con.dmApproved}}).then((dmApproved) => {
-//       //       dbClone.push({'urStatus':'DM_APPROVAL','count':dmApproved,'group':con.Ur});
-//       //       logger.info(req,cmd+'|DBs with group:'+ JSON.stringify(dbClone));
-//       //       return resp.getSuccess(req,res,cmd,dbClone);
-//       //     }).catch((err) => {
-//       //       logger.error(req,cmd+'|Error when count dmApproved mUR|'+err);
-//       //       return resp.getInternalError(req,res,cmd,err);
-//       //     })
-//       //   }else{
-//       //     mUR.count({where:{urStatus:con.dmApproved}}).then((dmApproved) => {
-//       //       dbClone.push({'urStatus':'DM_APPROVAL','count':dmApproved,'group':con.Ur});
-//       //       logger.info(req,cmd+'|DBs with group:'+ JSON.stringify(dbClone));
-//       //       return resp.getSuccess(req,res,cmd,dbClone);
-//       //     }).catch((err) => {
-//       //       logger.error(req,cmd+'|Error when count dmApproved mUR|'+err);
-//       //       return resp.getInternalError(req,res,cmd,err);
-//       //     })
-//       //   }
-//       // }).catch((err) => {
-//       //   logger.error(req,cmd+'|Error when findAll mUR|'+err);
-//       //   return resp.getInternalError(req,res,cmd,err);
-//       //   // console.log('Error : ' + chalk.red(err));
-//       //   // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
-//       // })
-
-// /****************adminUR*************/
-//       cmd = 'countAdminUR';
-//       mUR.findAll({group: ['urStatus'],
-//         attributes: ['urStatus',
-//           [mCfg.sequelize.fn('count', mCfg.sequelize.col('*')),'count']],
-//         include:[{model:mUrWf, as: 'urWorkflowList',attributes: [],
-//           // where: {$or: [{updateBy:decoded.userName, urStatus:con.adminAccept},mCfg.sequelize.col('user_request'.'urStatus'):{$like: con.dmApproved}]}}]
-//           where: {updateBy:decoded.userName, $or:[{urStatus:con.adminAccept},{urStatus:con.complete}]}
-//         }]
-
-//       }).then((dbs) => {
-//         logger.info(req,cmd+'|DBs:'+ JSON.stringify(dbs));
-//         cmd = 'chkDB';
-//         let dbClone = JSON.parse(JSON.stringify(dbs));
-//         if(util.isDataFound(dbs)){
-//           let i = 1;
-//           cmd = 'addGroup';
-//           dbClone.forEach((value) => {
-//             value.group=con.Ur;
-//           });
-//           mUR.count({where:{urStatus:con.dmApproved}}).then((dmApproved) => {
-//             dbClone.push({'urStatus':'DM_APPROVAL','count':dmApproved,'group':con.Ur});
-//             logger.info(req,cmd+'|DBs with group:'+ JSON.stringify(dbClone));
-//             return resp.getSuccess(req,res,cmd,dbClone);
-//           }).catch((err) => {
-//             logger.error(req,cmd+'|Error when count dmApproved mUR|'+err);
-//             return resp.getInternalError(req,res,cmd,err);
-//           })
-//         }else{
-//           mUR.count({where:{urStatus:con.dmApproved}}).then((dmApproved) => {
-//             dbClone.push({'urStatus':'DM_APPROVAL','count':dmApproved,'group':con.Ur});
-//             logger.info(req,cmd+'|DBs with group:'+ JSON.stringify(dbClone));
-//             return resp.getSuccess(req,res,cmd,dbClone);
-//           }).catch((err) => {
-//             logger.error(req,cmd+'|Error when count dmApproved mUR|'+err);
-//             return resp.getInternalError(req,res,cmd,err);
-//           })
-//         }
-//       }).catch((err) => {
-//         logger.error(req,cmd+'|Error when findAll mUR|'+err);
-//         return resp.getInternalError(req,res,cmd,err);
-//         // console.log('Error : ' + chalk.red(err));
-//         // res.json(resp.getJsonError(error.code_01001,error.desc_01001));
-//       })
-
-//     }catch(err){
-//       logger.error(req,cmd+'|'+err);
-//       return resp.getInternalError(req,res,cmd,err);
-//       // console.log('Error : ' + chalk.red(err));
-//       // res.json(resp.getJsonError(error.code_00003,error.desc_00003));
-//     }
-//   }
-// };
 
 module.exports = notification;

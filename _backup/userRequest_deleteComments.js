@@ -5,7 +5,6 @@ const util = require('../utils/bmsUtils');
 const jsUtil = require('util');
 const logger = require('../utils/logUtils');
 const error = require('../config/error');
-const cst = require('../config/constant');
 const mUR = require('../models/mUR');
 const mUrWf = require('../models/mUrWorkFlow');
 const mUser = require('../models/mUser');
@@ -18,7 +17,7 @@ const userRequest = {
   updateStatus: (req, res) => {
     let cmd = 'updateStatusUr';
     try{
-      // logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
+      logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
       cmd = 'createWorkflow';
       mUrWf.create(req.body.requestData).then((succeed) => {
           logger.info(req,cmd+'|AddedWorkflow:'+JSON.stringify(succeed));
@@ -49,12 +48,12 @@ const userRequest = {
   add: (req, res) => {
     let cmd = 'addUr';
     try{
-      // logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
+      logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
 
-      if(req.body.requestData.urType!='EDITCONTRACT'){
-//*********query at DM then add UR then add Workflow if not EDITCONTRACT
-        process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
-        cmd = 'callOM';
+//*********query at DM then add UR then add Workflow
+//****** Replace updateBy:system with DM name
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+      cmd = 'callOM';
         soap.createClient(cfg.om.wsdlPath, cfg.om.options, (err, client, body)=>{
           if (err) {
             logger.error(req,cmd+'|'+err);
@@ -80,6 +79,7 @@ const userRequest = {
                     res.json(resp.getJsonError(error.code_03001,error.desc_03001,err));
                   }else{
                     if(dataJsonStr.NewDataSet.Permission[0].MsgDetail[0]=='Success' && util.isDataFound(dataJsonStr.NewDataSet.Table)){
+                    // console.log(dataJsonStr.NewDataSet.Table[0].APPROVAL_EMAIL[0]); // Get Email
                       let dmUser = dataJsonStr.NewDataSet.Table[0].APPROVAL_USERNAME[0];
                       let dmEmail = dataJsonStr.NewDataSet.Table[0].APPROVAL_EMAIL[0];
                       logger.info(req,cmd+'|dmUser:'+dmUser+'|dmEmail:'+dmEmail);
@@ -98,7 +98,7 @@ const userRequest = {
                       req.body.requestData.urWorkflowList={urStatus:req.body.requestData.urStatus,updateBy:dmUser};
                       logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData.urWorkflowList));
                       cmd = 'createUR&Workflow';
-                      mUR.create(req.body.requestData, {include: [{model: mUrWf, as:cst.models.urWorkflows}]})
+                      mUR.create(req.body.requestData, {include: [{model: mUrWf, as:'urWorkflowList'}]})
                       .then((succeed) => {
                         //Send Email here!!!!
                         logger.info(req,'notifyEmail|'+cfg.email.notify);
@@ -133,28 +133,12 @@ const userRequest = {
                       res.json(resp.getJsonError(error.code_03002,error.desc_03002,err));
                     }
                   }
-                })
+                });
               }
-            },{timeout:cfg.om.timeout})
+            }, {timeout: 10000}); //10 Sec
           }
-        })
-      }else{ //EDITCONTRACT don't add workflow
-        cmd = 'createEditContractUR';
-        if(util.isDataFound(req.body.requestData.contractId)){
-          mUR.create(req.body.requestData).then((succeed) => {
-            logger.info(req,cmd+'|'+JSON.stringify(succeed));
-            return resp.getSuccess(req,res,cmd,succeed);
-          }).catch((err) =>{
-            logger.error(req,cmd+'|'+err);
-            logger.summary(req,cmd+'|'+error.desc_01001);
-            res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
-          })
-        }else{
-          let err ='No contractId not add editContract UR'
-          logger.info(req,cmd+'|'+err);
-          return resp.getIncompleteParameter(req,res,cmd,err);
-        }
-      }
+        });
+
     }catch(err){
       logger.error(req,cmd+'|'+err);
       return resp.getInternalError(req,res,cmd,err);
@@ -164,13 +148,13 @@ const userRequest = {
   edit: (req, res) => {
     let cmd = 'editUr';
     try{
-      // logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
+      logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
       const jWhere = {urId:req.body.requestData.urId};
       delete req.body.requestData.urId;
       cmd = 'updateUR';
       logger.info(req,cmd+'|where:'+jsUtil.inspect(jWhere, {showHidden: false, depth: null})+'|set:'+jsUtil.inspect(req.body.requestData, {showHidden: false, depth: null}));
       mUR.update(req.body.requestData, { where: jWhere }).then((succeed) => {
-        logger.info(req,cmd+'|updated '+ succeed +' records');
+        logger.info(req,cmd+'|updated '+ succeed +' rows');
         return resp.getSuccess(req,res,cmd);
       }).catch((err) => {
         logger.error(req,cmd+'|Error while update UR|'+err);
@@ -221,7 +205,6 @@ const userRequest = {
       cmd = 'findUR';
       mUR.findAndCountAll(jLimit).then((db) => {
         cmd = 'chkUrData';
-        logger.info(req,cmd+'|'+JSON.stringify(db));
         if(db.count>0) return resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"userRequestList":db.rows});
         else{
           logger.summary(req,cmd+'|Not Found UR');
@@ -265,8 +248,15 @@ const userRequest = {
   queryByCriteria: (req, res) => {
     let cmd = 'queryUrByCriteria';
     try{
-      // logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
+      logger.info(req,cmd+'|'+JSON.stringify(req.body.requestData));
       if(util.isDataFound(req.body)){
+        // mUR.findAll({where:req.body.requestData,
+        // include:[{model:mUrWf, as: 'urWorkflowList',attributes: { exclude: ['urId'] }}]
+        // }).then((db) => {
+        // let jwhere = req.body.requestData
+        // req.body.requestData.urCriteria.include = [{model:mUrWf, as: 'urWorkflowList',attributes: { exclude: ['urId'] },
+        //   where:req.body.requestData.urWorkflowList}];
+        // delete req.body.requestData.urWorkflowList;
         let jWhere = {};
         cmd = 'genWhere';
         if(util.isDataFound(req.body.requestData.urCriteria)){
@@ -278,7 +268,7 @@ const userRequest = {
         if(util.isDataFound(req.body.requestData.workflowCriteria)){
           logger.info(req,cmd+'|gen workflowCriteria');
           req.body.requestData.workflowCriteria.model=mUrWf;
-          req.body.requestData.workflowCriteria.as=cst.models.urWorkflows;
+          req.body.requestData.workflowCriteria.as='urWorkflowList';
           if(!util.isDataFound(req.body.requestData.workflowCriteria.attributes)&&JSON.stringify(req.body.requestData.workflowCriteria.attributes)!='[]'){
             logger.info(req,cmd+'|default workflow attributes');
             req.body.requestData.workflowCriteria.attributes={exclude:['urId'] }; 
@@ -288,14 +278,13 @@ const userRequest = {
           jWhere.include = req.body.requestData.workflowCriteria;
         }else{
           logger.info(req,cmd+'|default workflow with no criteria');
-          jWhere.include = [{model:mUrWf, as:cst.models.urWorkflows,required: false,attributes: { exclude: ['urId'] }}];
+          jWhere.include = [{model:mUrWf, as: 'urWorkflowList',required: false,attributes: { exclude: ['urId'] }}];
         } 
         logger.info(req,cmd+'|searchOptions:'+jsUtil.inspect(jWhere, {showHidden: false, depth: null}));
         
         cmd = 'findUR';
         mUR.findAll(jWhere).then((db) => {
           cmd = 'chkUrData';
-          logger.info(req,cmd+'|'+JSON.stringify(db));
           if(util.isDataFound(db)){
             logger.info(req,cmd+'|Found UR');
             return resp.getSuccess(req,res,cmd,{"userRequestList":db});
@@ -324,12 +313,15 @@ const userRequest = {
       const jWhere = {urId:req.params.urId};
       logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
       cmd = 'findUR';
+      // mUR.findOne({where:jWhere, include:[{model:mUrWf, where: { urStatus: 'DM_APPROVAL' }}]}).then((db) => {
+      // mUR.findOne({where:jWhere, include:[{model:mUrWf,attributes:['wfId', 'urStatus','updateBy','updateTime','remark']}]}).then((db) => {
+      // mUR.findOne({where:jWhere,attributes: [[mCfg.sequelize.fn('COUNT', mCfg.sequelize.col('UR_ID')), 'noUr']], 
+      // mUR.findOne({where:jWhere,attributes: {include:[[mCfg.sequelize.fn('COUNT', mCfg.sequelize.col('UR_ID')), 'noUr']]}, 
       mUR.findOne({where:jWhere, 
-        include:[{model:mUrWf, as:cst.models.urWorkflows,attributes:{exclude:['urId']}}]}).then((db) => {
+        include:[{model:mUrWf, as: 'urWorkflowList',attributes: { exclude: ['urId'] }}]}).then((db) => {
         cmd = 'chkUrData';
-        logger.info(req,cmd+'|'+JSON.stringify(db));
         if(util.isDataFound(db)){
-          logger.info(req,cmd+'|Found UR');
+          logger.info(req,cmd+'|Found UR|'+JSON.stringify(db));
           cmd = 'chk urWorkflowList';
           if(util.isDataFound(db.urWorkflowList)){
             return resp.getSuccess(req,res,cmd,db);

@@ -1,7 +1,7 @@
 'use strict'
 
 // const jwt = require('jwt-simple');
-const chalk = require('chalk');
+// const chalk = require('chalk');
 const logger = require('../utils/logUtils');
 const resp = require('../utils/respUtils');
 const error = require('../config/error');

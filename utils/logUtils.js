@@ -102,7 +102,7 @@ exports.info = (reqData, errMsg) =>
     if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
     let logMsg = getLogHeader('INFO',reqData)+error;
     writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg);
-};
+}
 
 exports.error = (reqData, errMsg) =>
 {//${LogTime}|${hostname}|${appname}|ERROR|Token|COMMAMD|Data|...
@@ -110,15 +110,15 @@ exports.error = (reqData, errMsg) =>
     if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
     let logMsg = getLogHeader('ERROR',reqData)+error;
     writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg);
-};
+}
 
 exports.incoming = (reqData, errMsg) =>
 {//${LogTime}|${hostname}|${appname}|INCOMING|Token|COMMAMD|Data|...
     let error = '';
     if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|ERROR:'+errMsg
-    let logMsg = getLogHeader('INCOMING',reqData)+error;
+    let logMsg = getLogHeader('INCOMING',reqData)+'|Body:'+JSON.stringify(reqData.body)+error;
     writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg);
-};
+}
 
 exports.summary = (reqData, errMsg) =>
 {//${LogTime}|${hostname}|${appname}|SUMMARY|Token|InTime|OutTime|DiffTime|INPUT|OUTPUT|STATUS|ResultCode|ResultDesc
@@ -126,10 +126,10 @@ exports.summary = (reqData, errMsg) =>
     if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
     let logMsg = getLogHeader('SUMMARY',reqData)+error;
     writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg);
-};
+}
 
 exports.db = (reqData) =>
 {
     writeLog(logCfg.log.logDbPath+'/'+getLogFileName(),getLogHeader('DB')+'|'+reqData);
-};
+}
 

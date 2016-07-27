@@ -53,6 +53,7 @@ config.devMsg = true; //Response devMsg when error
 
 // OM
 config.om = {};
+config.om.timeout = 10000 //10 Sec
 config.om.wsdlPath = __dirname+'/om.wsdl';
 config.om.OmCode = 'OMTESTBMS';
 config.om.options = {wsdl_options:{

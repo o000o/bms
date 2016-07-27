@@ -9,9 +9,6 @@ const contract = require('./contract.js');
 const vendorProfile = require('./vendorProfile.js');
 const userRequest = require('./userRequest.js');
 const notification = require('./notification.js')
-// const user = require('../_ooo/user.js')
-
-// router.get('/ooo', user.queryUser);
 
 // ============================================================================
 // Login
@@ -40,20 +37,19 @@ router.put('/userRequest/updateStatus', userRequest.updateStatus);
 // ============================================================================
 router.post('/locationDetail', locationD.add);
 router.put('/locationDetail', locationD.edit);
+router.delete('/locationDetail/:buildingDetailId', locationD.delete);
 // router.get('/location', location.query);
 router.post('/location', location.queryByCriteria);
 // router.get('/location/:buildingId', location.queryById);
-// router.delete('/location:buildingId', location.delete);
+// router.delete('/location/:buildingId', location.delete);
 
 // ============================================================================
 // Contract
 // ============================================================================
 router.post('/contract', contract.add);
-// router.put('/contract', contract.edit);
-// router.get('/contract', contract.query);
-// router.post('/getContract', contract.queryByCriteria);
-// router.get('/contract/:contractId', contract.queryById);
-// router.delete('/contract/:contractId', contract.delete);
+router.post('/getContract', contract.queryByCriteria);
+router.put('/contractBuilding', contract.editLocation);
+router.put('/contractVendorProfile', contract.editVendor);
 
 // ============================================================================
 // VendorProfile
