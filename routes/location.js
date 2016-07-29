@@ -110,7 +110,7 @@ Because model is an object but NOT JSON object
         cmd = 'findLocation';
         mLocation.findAndCountAll(jWhere).then((db) => {//{include:[{all:true,nested:true}]}
           cmd = 'chkLocationData';
-          logger.info(req,cmd+'|'+JSON.stringify(db));
+          logger.query(req,cmd+'|'+JSON.stringify(db));
           if(db.count>0) return resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"buildingLocationList":db.rows});
           else{
             logger.summary(req,cmd+'|Not Found Location');

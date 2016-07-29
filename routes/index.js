@@ -55,8 +55,8 @@ router.put('/contractVendorProfile', contract.editVendor);
 // VendorProfile
 // ============================================================================
 router.post('/vendorProfile', vendorProfile.add);
+router.post('/getVendorProfile', vendorProfile.queryByCriteria);
 router.put('/vendorProfile', vendorProfile.edit);
-router.get('/vendorProfile', vendorProfile.query);
-router.delete('/vendorProfile', vendorProfile.delete);
+router.delete('/vendorProfile/:vendorId', vendorProfile.delete);
 
 module.exports = router;

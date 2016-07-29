@@ -24,7 +24,7 @@ module.exports = (req, res, next) => {
   let flagT = 0;
   let cmd = 'chkRequestData';
   try {
-    if(!util.isDataFound(req.body.requestData)&&(req.method=="POST"||req.method=="PUT")){
+    if((req.body.requestData == undefined)&&(req.method=="POST"||req.method=="PUT")){
       let err ='No requestData'
       logger.info(req,cmd+'|'+err);
       return resp.getIncompleteParameter(req,res,cmd,err);

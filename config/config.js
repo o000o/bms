@@ -38,6 +38,7 @@ config.log.logPath = 'logs/';
 config.log.logDbPath = 'logs/db';
 config.log.projectName = 'BMS';
 config.log.logTime = 15;
+config.log.queryResult = false;
 
 // Token
 config.expires = 30; // minutes

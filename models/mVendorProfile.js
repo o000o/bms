@@ -23,7 +23,7 @@ const mVendorProfile = mCfg.sequelize.define('vendor_profile', {
 	mobileNo: { type: Sequelize.STRING, field: 'mobile_no', allowNull: true},
 	fax: { type: Sequelize.STRING, allowNull: true},
 	email: { type: Sequelize.STRING, allowNull: false},
-	vendorCode: { type: Sequelize.STRING, allowNull: true}
+	vendorCode: { type: Sequelize.STRING, field: 'vendor_code', allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
 mVendorProfile.hasMany(mVendorContact, {as:cst.models.vendorContacts, foreignKey:'vendorId', targetKey:'vendorId'});

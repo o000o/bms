@@ -221,7 +221,7 @@ const userRequest = {
       cmd = 'findUR';
       mUR.findAndCountAll(jLimit).then((db) => {
         cmd = 'chkUrData';
-        logger.info(req,cmd+'|'+JSON.stringify(db));
+        logger.query(req,cmd+'|'+JSON.stringify(db));
         if(db.count>0) return resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"userRequestList":db.rows});
         else{
           logger.summary(req,cmd+'|Not Found UR');
@@ -295,7 +295,7 @@ const userRequest = {
         cmd = 'findUR';
         mUR.findAll(jWhere).then((db) => {
           cmd = 'chkUrData';
-          logger.info(req,cmd+'|'+JSON.stringify(db));
+          logger.query(req,cmd+'|'+JSON.stringify(db));
           if(util.isDataFound(db)){
             logger.info(req,cmd+'|Found UR');
             return resp.getSuccess(req,res,cmd,{"userRequestList":db});
@@ -327,7 +327,7 @@ const userRequest = {
       mUR.findOne({where:jWhere, 
         include:[{model:mUrWf, as:cst.models.urWorkflows,attributes:{exclude:['urId']}}]}).then((db) => {
         cmd = 'chkUrData';
-        logger.info(req,cmd+'|'+JSON.stringify(db));
+        logger.query(req,cmd+'|'+JSON.stringify(db));
         if(util.isDataFound(db)){
           logger.info(req,cmd+'|Found UR');
           cmd = 'chk urWorkflowList';
