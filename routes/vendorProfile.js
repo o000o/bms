@@ -1,6 +1,7 @@
 'use strict'
 
 const logger = require('../utils/logUtils');
+const async = require('async');
 const resp = require('../utils/respUtils');
 const util = require('../utils/bmsUtils');
 const jsUtil = require('util');
@@ -40,7 +41,69 @@ const vendorProfile = {
       		logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
                 mVendorProfile.update(req.body.requestData, {where:jWhere}).then((succeed) => {
 			logger.info(req,cmd+'|update VendorProfile complete');
-                        return resp.getSuccess(req,res,cmd);
+
+			let asyncTasks = [];
+			if(util.isDataFound(req.body.requestData.vendorContactList)){
+			req.body.requestData.vendorContactList.forEach(function(vendorContact) {
+				let JWhere = {};
+       				cmd = 'updateVendorContact';
+				if(vendorContact.editAction == "E"){
+					vendorContact.vendorId = req.body.requestData.vendorId;
+					JWhere = {vendorContactId: vendorContact.vendorContactId};
+      					logger.info(req,cmd+'|where:'+JSON.stringify(JWhere));
+					delete vendorContact.editAction;
+                			asyncTasks.push(function(callback){
+						mVendorContact.update(vendorContact, {where:JWhere}).then((succeed) => {
+                                                	logger.info(req,cmd+'|update VendorContact complete');
+							callback(null,succeed);
+                                        	}).catch((err) => {
+                                                	logger.error(req,cmd+'|Error when update mVendorContact|'+err);
+							callback(err,null);
+                                        	})
+					});
+				}else if(vendorContact.editAction == "A"){
+					vendorContact.vendorId = req.body.requestData.vendorId;	
+					delete vendorContact.editAction;
+      					logger.info(req,cmd+'|Add:'+JSON.stringify(vendorContact));
+					asyncTasks.push(function(callback){
+						mVendorContact.create(vendorContact).then((succeed) => {
+                                                	logger.info(req,cmd+'|add VendorContact complete');
+							callback(null,succeed);
+                                        	}).catch((err) => {
+                                                	logger.error(req,cmd+'|Error when create mVendorProfile|'+err);
+							callback(err,null);
+                                        	})
+					});
+                		}else if(vendorContact.editAction == "D"){
+					JWhere = {vendorContactId: vendorContact.vendorContactId};
+					delete vendorContact.editAction;
+                			logger.info(req,cmd+'|where:'+JSON.stringify(JWhere));
+                			asyncTasks.push(function(callback){
+						mVendorContact.destroy({where:JWhere}).then((succeed) => {
+                                                	logger.info(req,cmd+'|deleted '+ succeed +' records');
+							callback(null,succeed);
+                                        	}).catch((err) => {
+                                                	logger.error(req,cmd+'|Error while delete mVendorProfile|'+err);
+							callback(err,null);
+                                        	});
+                			});
+				}
+			})
+			}
+
+			if(asyncTasks.length > 0){
+				async.parallel(asyncTasks, function(err,result){
+					if(err){
+                                		logger.summary(req,cmd+'|'+error.desc_01001);
+                        			res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+					}else{
+						logger.info(req,cmd+'|result:'+JSON.stringify(result));
+						resp.getSuccess(req,res,cmd);
+					}
+				});
+			}else{
+				resp.getSuccess(req,res,cmd);
+			}
                 }).catch((err) => {
                         logger.error(req,cmd+'|Error when update mVendorProfile|'+err);
                         logger.summary(req,cmd+'|'+error.desc_01001);
@@ -90,9 +153,6 @@ const vendorProfile = {
       		logger.info(req,cmd+'|'+JSON.stringify(jLimit));
 
 		let jWhere = {};
-		//add paging in to jwhere
-        	jWhere.offset = jLimit.offset;
-        	jWhere.limit = jLimit.limit
 
         	cmd = 'genWhere';
         	if(util.isDataFound(req.body.requestData.vendorCriteria)){
@@ -116,6 +176,9 @@ const vendorProfile = {
           		logger.info(req,cmd+'|default vendorContact with no criteria');
           		jWhere.include = [{model:mVendorContact, as:cst.models.vendorContacts,required: false,attributes: { exclude: ['vendorId'] }}];
         	}
+		//add paging in to jwhere
+        	jWhere.offset = jLimit.offset;
+        	jWhere.limit = jLimit.limit
 		logger.info(req,cmd+'|searchOptions:'+jsUtil.inspect(jWhere, {showHidden: false, depth: null}));
 		cmd = 'findVendorProfile';
         	mVendorProfile.findAndCountAll(jWhere).then((db) => {

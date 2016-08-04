@@ -8,10 +8,10 @@ const mCtPayment = mCfg.sequelize.define('contract_payment', {
 	contractId: {type: Sequelize.STRING, field: 'contract_id', primaryKey: true, allowNull: false},
 	paymentType: {type: Sequelize.STRING, field: 'payment_type', allowNull: false},
 	paymentDetail: {type: Sequelize.STRING, field: 'payment_detail', allowNull: true},
-	startDate: {type: Sequelize.DATEONLY, field: 'start_date', allowNull: true,
+	startDate: {type: Sequelize.DATEONLY, field: 'start_date', allowNull: false,
 		get: function() {return mCfg.correctTime(this.getDataValue('startDate'));}
 	},
-	endDate: {type: Sequelize.DATEONLY, field: 'end_date', allowNull: true,
+	endDate: {type: Sequelize.DATEONLY, field: 'end_date', allowNull: false,
 		get: function() {return mCfg.correctTime(this.getDataValue('endDate'));}
 	},
 	price: {type: Sequelize.REAL, allowNull: true},

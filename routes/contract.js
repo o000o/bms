@@ -1,19 +1,22 @@
 'use strict'
 
-const resp = require('../utils/respUtils');
-const util = require('../utils/bmsUtils');
-const logger = require('../utils/logUtils');
-const jsUtil = require('util');
-const error = require('../config/error');
-const cst = require('../config/constant');
-const mContract = require('../models/mContract');
-const mVendorProfile = require('../models/mVendorProfile');
-const mVendorContact = require('../models/mVendorProfileContact');
-const mLocation = require('../models/mBuildingLocation');
-const mArea = require('../models/mBuildingArea');
-const mDocument = require('../models/mDocument');
-const mPayment = require('../models/mContractPayment');
-const mContractAgent = require('../models/mContractAgent');
+const resp = require('../utils/respUtils')
+const util = require('../utils/bmsUtils')
+const logger = require('../utils/logUtils')
+const jsUtil = require('util')
+const error = require('../config/error')
+const cst = require('../config/constant')
+const mContract = require('../models/mContract')
+const mVendorProfile = require('../models/mVendorProfile')
+const mVendorContact = require('../models/mVendorProfileContact')
+const mLocation = require('../models/mBuildingLocation')
+const mArea = require('../models/mBuildingArea')
+const mDocument = require('../models/mDocument')
+const mPayment = require('../models/mContractPayment')
+const mContractAgent = require('../models/mContractAgent')
+const mUrWf = require('../models/mUrWorkFlow')
+const mUR = require('../models/mUR')
+const async = require('async')
 
 const contract = {
 /***************
@@ -246,78 +249,477 @@ const contract = {
   },
 
   editLocation: (req, res) => {
-    let cmd = 'editLocation';
+    let cmd = 'editLocation'
     try{
- 
- return resp.getSuccess(req,res,cmd);
-      // const jWhere = {urId:req.body.requestData.urId};
-      // delete req.body.requestData.urId;
-      // cmd = 'updateUR';
-      // logger.info(req,cmd+'|where:'+jsUtil.inspect(jWhere, {showHidden: false, depth: null})+'|set:'+jsUtil.inspect(req.body.requestData, {showHidden: false, depth: null}));
-      // mUR.update(req.body.requestData, { where: jWhere }).then((succeed) => {
-      //   logger.info(req,cmd+'|updated '+ succeed +' rows');
-      //   return resp.getSuccess(req,res,cmd);
-      // }).catch((err) => {
-      //   logger.error(req,cmd+'|Error while update UR|'+err);
-      //   logger.summary(req,cmd+'|'+error.desc_01001);
-      //   res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
-      //   // logger.error(req,cmd+'|Error when query or delete|'+err);
-      //   // return resp.getInternalError(req,res,cmd,err);
-      // });
+      if(util.isDataFound(req.body.requestData)&&util.isDataFound(req.body.requestData.contractId)&&util.isDataFound(req.body.requestData.urId)){
+        let asyncTasks = [] // Array to hold async tasks
+        let tContractId = req.body.requestData.contractId
+        cmd = 'checkContractData'
+        let ctData = JSON.parse(JSON.stringify(req.body.requestData))
+        delete ctData.buildingLocation
+        delete ctData.contractId
+        if(util.isDataFound(ctData)){
+          cmd = 'pushUpdateContractTask'
+          asyncTasks.push((callback)=>{
+            let ctWhere = {contractId:tContractId}
+            logger.info(req,'runUpdateContractTask|contract:'+JSON.stringify(ctData)+'|where:'+JSON.stringify(ctWhere))
+            mContract.update(ctData,{where:ctWhere}).then((succeed) => {
+              ctWhere.editStatus='Updated '+succeed+' rows'
+              callback(null,ctWhere)
+            }).catch((err) => {
+              ctData.contractId=tContractId
+              ctData.editStatus='Update Error:'+err
+              callback(err,ctData)
+            })
+          })
+        }
 
+        cmd = 'checkLocationData'
+        if(util.isDataFound(req.body.requestData.buildingLocation)){
+          let tbuildingId = util.isDataFound(req.body.requestData.buildingLocation.buildingId) ? req.body.requestData.buildingLocation.buildingId : 0
+          let loData = JSON.parse(JSON.stringify(req.body.requestData.buildingLocation))
+          delete loData.buildingAreaList
+          delete loData.buildingId
+          cmd = 'pushUpdateLocationTask'
+          if(loData){
+            if(tbuildingId){
+              asyncTasks.push((callback)=>{
+                let loWhere = {buildingId:tbuildingId}
+                logger.info(req,'runUpdateLocationTask|location:'+JSON.stringify(loData)+'|where:'+JSON.stringify(loWhere))
+                mLocation.update(loData,{where:loWhere}).then((succeed) => {
+                  callback(null,{buildingId:tbuildingId, editStatus:'Updated '+succeed+' rows'})
+                }).catch((err) => {
+                  loData.editStatus='Update Error:'+err
+                  callback(err,loData)
+                })
+              })
+            }else{
+              asyncTasks.push((callback)=>{
+                loData.buildingId = tbuildingId
+                loData.editStatus = 'BadRequest:Can not update Location without buildingId'
+                callback(null,loData)
+              })
+            }
+          }
 
-      cmd = 'asyncTasks';
-      // Array to hold async tasks
-      let asyncTasks = [];
-       
-      // Loop through some items
-      items.forEach((item)=>{
-        // We don't actually execute the async action here
-        // We add a function containing it to an array of "tasks"
-        asyncTasks.push((callback)=>{
-          // Call an async function, often a save() to DB
-          item.someAsyncCall(()=>{
-            // Async call is done, alert via callback
-            callback();
-          });
-        });
-      });
+          cmd = 'pushBuildingAreaListTasks'
+          if(util.isDataFound(req.body.requestData.buildingLocation.buildingAreaList)){
+            req.body.requestData.buildingLocation.buildingAreaList.forEach((item)=>{ // Loop through some items
+              if(util.isDataFound(item.buildingAreaId) && item.editAction=='D'){ //delete
+                asyncTasks.push((callback)=>{
+                  mArea.destroy({where:{buildingAreaId:item.buildingAreaId}}).then((succeed) => {
+                    // editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Deleted '+succeed+' rows'})
+                    callback(null,{buildingAreaId:item.buildingAreaId, editStatus:'Deleted '+succeed+' rows'})
+                  }).catch((err) => {
+                    // editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Delete Error:'+err})
+                    callback(err,{buildingAreaId:item.buildingAreaId, editStatus:'Delete Error:'+err})
+                  })
+                })
+              }else if(!util.isDataFound(item.buildingAreaId) && item.editAction=='A' && tbuildingId){
+                //insert
+                asyncTasks.push((callback)=>{
+                  let jInsert = JSON.parse(JSON.stringify(item))
+                  delete jInsert.editAction
+                  jInsert.contractId = tContractId
+                  jInsert.buildingId = tbuildingId
+                  mArea.create(jInsert).then((succeed) => {
+                    // logger.info(req,cmd+'|deleted '+ succeed +' records')
+                    // editResults.push({buildingAreaId:succeed.buildingAreaId, editStatus:'Inserted'})
+                    callback(null,{buildingAreaId:succeed.buildingAreaId, editStatus:'Inserted'})
+                  }).catch((err) => {
+                    // jInsert.editStatus='Insert Error:'+err
+                    // editResults.push(jInsert)
+                    item.editStatus='Insert Error:'+err
+                    callback(err,item)
+                  })
+                })
+              }else if(util.isDataFound(item.buildingAreaId) && item.editAction=='E'){
+                //update
+                asyncTasks.push((callback)=>{
+                  let jUpdate = JSON.parse(JSON.stringify(item))
+                  delete jUpdate.editAction
+                  delete jUpdate.buildingAreaId
+                  mArea.update(jUpdate,{where:{buildingAreaId:item.buildingAreaId}}).then((succeed) => {
+                    // editResults.push({buildingAreaId:item.buildingAreaId,buildingId:tbuildingId, editStatus:'Updated '+succeed+' rows'})
+                    callback(null,{buildingAreaId:item.buildingAreaId, editStatus:'Updated '+succeed+' rows'})
+                  }).catch((err) => {
+                    // jUpdate.buildingAreaId = item.buildingAreaId
+                    // jUpdate.editStatus='Update Error:'+err
+                    // editResults.push(jUpdate)
+                    item.editStatus='Update Error:'+err
+                    callback(err,item)
+                  })
+                })
+              }else{ //conflict not insert or update DB
+                asyncTasks.push((callback)=>{
+                  item.editStatus = 'BadRequest:Conflict between data and editAction'
+                  // editResults.push(item)
+                  callback(null,item)
+                })
+              }
+            })
+            logger.info(req,cmd+'|done')
+          }
+        }
 
-      // To move beyond the iteration example, let's add
-      // another (different) async task for proof of concept
-      asyncTasks.push((callback)=>{
-        // Set a timeout for 3 seconds
-        setTimeout(()=>{
-          // It's been 3 seconds, alert via callback
-          callback();
-        }, 3000);
-      });
-       
-      // Now we have an array of functions doing async tasks
-      // Execute all async tasks in the asyncTasks array
-      async.parallel(asyncTasks, ()=>{
-        // All tasks are done now
-        doSomethingOnceAllAreDone()
-      })
+        // Now we have an array of functions doing async tasks
+        // Execute all async tasks in the asyncTasks array
+        cmd = 'checkContractBuildingTasks'
+        if(util.isDataFound(asyncTasks)){
+          logger.info(req,cmd+'|Have Tasks')
+          let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.editContractComplete
 
+          cmd = 'pushUpdateUrStatusTask'
+          asyncTasks.push((callback)=>{
+            let urWhere = {urId:req.body.requestData.urId, urStatus:{$ne:cStatus}}
+            logger.info(req,'runUpdateUrStatusTask|urStatus:'+cStatus+'|where:'+JSON.stringify(urWhere))
+            mUR.update({urStatus:cStatus},{where:urWhere}).then((succeed) => {
+              // editResults.push({urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
+              // urWhere.editStatus='Updated '+succeed+' rows'
+              callback(null,{urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
+            }).catch((err) => {
+              // editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
+              // urWhere.editStatus='Update Error:'+err
+              callback(err,{urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
+            })
+          })
 
+          cmd = 'pushInsertWorkflowTask'
+          asyncTasks.push((callback)=>{
+            let upBy = req.header('x-userTokenId') ? util.getUserName(req.header('x-userTokenId')):'system'
+            let workFlowData = {urId:req.body.requestData.urId,urStatus:cStatus,updateBy:upBy}
+            let wfWhere = {urId:req.body.requestData.urId, urStatus:cStatus}
+            logger.info(req,'runhInsertWorkflowTask|workFlow:'+JSON.stringify(workFlowData)+'|where:'+JSON.stringify(wfWhere))
+            mUrWf.findOrCreate({where:wfWhere, defaults:workFlowData})
+            .spread((db,succeed) => {
+              let dbClone = {}
+              if(util.isDataFound(db)) dbClone.wfId = db.wfId
+              if(succeed) dbClone.editStatus = 'Inserted'
+              else dbClone.editStatus = 'Duplicate'
+              // editResults.push(dbClone)
+              callback(null,dbClone)
+            }).catch((err) => {
+              workFlowData.editStatus = 'Insert Error:'+err
+              // editResults.push(workFlowData)
+              callback(err,workFlowData)
+            })
+          })
 
+          cmd = 'runAsyncTasks'
+          async.parallel(asyncTasks, (err,editResults)=>{ // All tasks are done now
+            // doSomethingOnceAllAreDone()
+            if(util.isDataFound(editResults)) logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,editResults}))
+            if(err){
+              logger.error(req,cmd+'|Error while run asyncTasks|'+err)
+              logger.summary(req,cmd+'|'+error.desc_01001)
+              if(util.isDataFound(editResults)) res.json(resp.getJsonError(error.code_01001,error.desc_01001,{contractId:tContractId,editResults}))
+              else res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+            }else{
+              // logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result:result}))
+              return resp.getSuccess(req,res,cmd,{contractId:tContractId,editResults})
+            }
+          })
+        }else{
+          let err = 'Tasks not found'
+          logger.summary(req,cmd+'|'+error.desc_01001+'|'+err)
+          res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+        }
+      }else{
+        let err = 'Incomplete requestData'
+        logger.info(req,cmd+'|'+err)
+        return resp.getIncompleteParameter(req,res,cmd,err)
+      }
     }catch(err){
-      logger.error(req,cmd+'|'+err);
-      resp.getInternalError(req,res,cmd,err);
-    }
+      // if(util.isDataFound(editResults)) logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,editResults}))
+      logger.error(req,cmd+'|'+err)
+      resp.getInternalError(req,res,cmd,err)
+    } 
+
+
+
+
+// //=================================================
+//       cmd = 'asyncTasks'
+//       // Array to hold async tasks
+//       let asyncTasks = []
+       
+//       // Loop through some items
+//       items.forEach((item)=>{
+//         // We don't actually execute the async action here
+//         // We add a function containing it to an array of "tasks"
+//         asyncTasks.push((callback)=>{
+//           // Call an async function, often a save() to DB
+//           item.someAsyncCall(()=>{
+//             // Async call is done, alert via callback
+//             callback()
+//           });
+//         });
+//       });
+
+//       // To move beyond the iteration example, let's add
+//       // another (different) async task for proof of concept
+//       asyncTasks.push((callback)=>{
+//         // Set a timeout for 3 seconds
+//         setTimeout(()=>{
+//           // It's been 3 seconds, alert via callback
+//           callback()
+//         }, 3000)
+//       });
+       
+//       // Now we have an array of functions doing async tasks
+//       // Execute all async tasks in the asyncTasks array
+//       async.parallel(asyncTasks, ()=>{
+//         // All tasks are done now
+//         doSomethingOnceAllAreDone()
+//       })
+
+
   },
 
-  editVendor: (req, res) => {
-    let cmd = 'editVendor';
+  editVendorAgent: (req, res) => {
+        let cmd = 'EditVendorAgent'
+        try {
+            let cStatus = cst.editContractComplete
+            let wStatus = cst.editContractWait
+            let upBy = 'system'
+            let workFlowData = {
+                urId: req.body.requestData.urId,
+                urStatus: cStatus,
+                updateBy: upBy
+            }
+            let asyncTasks = []
+            asyncTasks.push((callback) => {
+                let jWhere1 = {
+                    contractId: req.body.requestData.contractId
+                }
+                mContract.update({
+                    vendorId: req.body.requestData.vendorId
+                }, {
+                    where: jWhere1
+                }).then((succeed) => {
+                    logger.info(req, 'UpdateVendorId|Data:{\"vendorId\": \"' + req.body.requestData.vendorId + '\"}|Update complete')
+                    callback(null, succeed)
+                }).catch((err) => {
+                    logger.error(req, 'UpdateVendorId|Data:{\"vendorId\": \"' + req.body.requestData.vendorId + '\"}|Error:' + err)
+                    callback(err, null)
+                })
+            })
+            if (util.isDataFound(req.body.requestData.contractVendorAgentList)) {
+                req.body.requestData.contractVendorAgentList.forEach((vendorAgent) => {
+                    if (vendorAgent.editAction == "A") {
+                        vendorAgent.contractId = req.body.requestData.contractId
+                        delete vendorAgent.editAction
+                        asyncTasks.push((callback) => {
+                            mContractAgent.create(vendorAgent).then((succeed) => {
+                                logger.info(req, 'UpdateVendorAgent|Data:' + JSON.stringify(vendorAgent) + '|Create complete')
+                                callback(null, succeed)
+                            }).catch((err) => {
+                                logger.error(req, 'UpdateVendorAgent|Data:' + JSON.stringify(vendorAgent) + '|Error:' + err)
+                                callback(err, null)
+                            })
+                        })
+                    } else if (vendorAgent.editAction == "D") {
+                        let jWhere2 = {
+                            contractId: req.body.requestData.contractId,
+                            vendorContactId: vendorAgent.vendorContactId
+                        }
+                        delete vendorAgent.editAction
+                        asyncTasks.push((callback) => {
+                            mContractAgent.destroy({
+                                where: jWhere2
+                            }).then((succeed) => {
+                                logger.info(req, 'UpdateVendorAgent|Data:' + JSON.stringify(vendorAgent) + '|Deleted ' + succeed + ' records')
+                                callback(null, succeed)
+                            }).catch((err) => {
+                                logger.error(req, 'UpdateVendorAgent|Data:' + JSON.stringify(vendorAgent) + '|Error:' + err)
+                                callback(err, null)
+                            })
+                        })
+                    }
+                })
+            }
+            asyncTasks.push((callback) => {
+                let jWhere3 = {
+                    urId: req.body.requestData.urId,
+                    urStatus: wStatus
+                }
+                mUR.update({
+                    urStatus: cStatus
+                }, {
+                    where: jWhere3
+                }).then((succeed) => {
+                    logger.info(req, 'PushUpdateUrStatusTasks|Data:{\"urStatus\": \"' + cStatus + '\"}|Update complete')
+                    callback(null, succeed)
+                }).catch((err) => {
+                    logger.error(req, 'PushUpdateUrStatusTasks|Data:{\"urStatus\": \"' + cStatus + '\"}|Error:' + err)
+                    callback(err, null)
+                })
+            })
+            asyncTasks.push((callback) => {
+                mUrWf.findOrCreate({
+                    where: {
+                        urId: req.body.requestData.urId
+                    },
+                    defaults: workFlowData
+                }).spread((db, succeed) => {
+                    if (succeed) logger.info(req, 'PushUpdateUrWfStatusTasks|Data:' + JSON.stringify(workFlowData) + '|Create complete')
+                    else logger.info(req, 'PushUpdateUrWfStatusTasks|Data:' + JSON.stringify(workFlowData) + '|Create duplicate')
+                    callback(null, succeed)
+                }).catch((err) => {
+                    logger.error(req, 'PushUpdateUrWfStatusTasks|Data:' + JSON.stringify(workFlowData) + '|Error:' + err)
+                    callback(err, null)
+                })
+            })
+            async.parallel(asyncTasks, (err, result) => {
+                if (err) {
+                    logger.summary(req, cmd + '|' + error.desc_01001)
+                    res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
+                } else {
+                    resp.getSuccess(req, res, cmd)
+                }
+            })
+        } catch (err) {
+            logger.error(req, cmd + '|' + err)
+            resp.getInternalError(req, res, cmd, err)
+        }
+    },
+
+  editPayment: (req, res) => {
+    let cmd = 'editPayment'
+    let editResults = []
     try{
- 
- return resp.getSuccess(req,res,cmd);
+      if(util.isDataFound(req.body.requestData)&&util.isDataFound(req.body.requestData.contractPaymentList)
+        &&util.isDataFound(req.body.requestData.contractId)&&util.isDataFound(req.body.requestData.urId)){
+        let asyncTasks = [] // Array to hold async tasks
+        let tContractId = req.body.requestData.contractId
+        cmd = 'pushPaymentListTasks'
+        req.body.requestData.contractPaymentList.forEach((item)=>{ // Loop through some items
+          if(util.isDataFound(item.contractPaymentId) && item.editAction=='D'){ //delete
+            asyncTasks.push((callback)=>{
+              mPayment.destroy({where:{contractPaymentId:item.contractPaymentId}}).then((succeed) => {
+                // logger.info(req,cmd+'|deleted '+ succeed +' records')
+                editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Deleted '+succeed+' rows'})
+                callback(null,succeed)
+              }).catch((err) => {
+                // logger.error(req,cmd+'|Error while delete contractPayments|'+err)
+                editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Delete Error:'+err})
+                callback(err,null)
+              })
+            })
+          }else if(!util.isDataFound(item.contractPaymentId) && item.editAction=='A'){
+            //insert
+            asyncTasks.push((callback)=>{
+              let jInsert = JSON.parse(JSON.stringify(item))
+              delete jInsert.editAction
+              jInsert.contractId = tContractId
+              mPayment.create(jInsert).then((succeed) => {
+                // logger.info(req,cmd+'|deleted '+ succeed +' records')
+                editResults.push({contractPaymentId:succeed.contractPaymentId, editStatus:'Inserted'})
+                callback(null,succeed)
+              }).catch((err) => {
+                jInsert.editStatus='Insert Error:'+err
+                editResults.push(jInsert)
+                callback(err,null)
+              })
+            })
+          }else if(util.isDataFound(item.contractPaymentId) && item.editAction=='E'){
+            //update
+            asyncTasks.push((callback)=>{
+              let jUpdate = JSON.parse(JSON.stringify(item))
+              delete jUpdate.editAction
+              delete jUpdate.contractPaymentId
+              mPayment.update(jUpdate,{where:{contractPaymentId:item.contractPaymentId}}).then((succeed) => {
+                editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Updated '+succeed+' rows'})
+              // mPayment.upsert(jWhere).then((succeed) => { //"notNull Violation" <= Problem with start&end date even when want to update
+                // logger.info(req,cmd+'|deleted '+ succeed +' records')
+                // if(succeed) editResults.push({contractPaymentId:item.contractPaymentId, upsert:'Inserted'})
+                // else editResults.push({contractPaymentId:item.contractPaymentId, upsert:'Updated'})
+                callback(null,succeed)
+              }).catch((err) => {
+                jUpdate.contractPaymentId = item.contractPaymentId
+                jUpdate.editStatus='Update Error:'+err
+                editResults.push(jUpdate)
+                callback(err,null)
+              })
+            })
+          }else{ //conflict not insert or update DB
+            item.editStatus = 'BadRequest:Conflict between data and editAction'
+            editResults.push(item)
+          }
+        })
+        logger.info(req,cmd+'|done')
+        // Now we have an array of functions doing async tasks
+        // Execute all async tasks in the asyncTasks array
+        cmd = 'checkPaymentListTasks'
+        if(util.isDataFound(asyncTasks)){
+          logger.info(req,cmd+'|Have Tasks')
+          let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.editContractComplete
 
+          cmd = 'pushUpdateUrStatusTask'
+          asyncTasks.push((callback)=>{
+            let urWhere = {urId:req.body.requestData.urId, urStatus:{$ne:cStatus}}
+            logger.info(req,'runUpdateUrStatusTask|urStatus:'+cStatus+'|where:'+JSON.stringify(urWhere))
+            mUR.update({urStatus:cStatus},{where:urWhere}).then((succeed) => {
+              // urWhere.editStatus='Updated '+succeed+' rows' //urId become ur_id if use this line
+              editResults.push({urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
+              callback(null,succeed)
+            }).catch((err) => {
+              // urWhere.editStatus='Update Error:'+err //urId become ur_id if use this line
+              editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
+              callback(err,null)
+            })
+          })
+          
+          cmd = 'pushInsertWorkflowTask'
+          asyncTasks.push((callback)=>{
+            let upBy = req.header('x-userTokenId') ? util.getUserName(req.header('x-userTokenId')):'system'
+            let workFlowData = {urId:req.body.requestData.urId,urStatus:cStatus,updateBy:upBy}
+            let wfWhere = {urId:req.body.requestData.urId, urStatus:cStatus}
+            logger.info(req,'runInsertWorkflowTask|workFlow:'+JSON.stringify(workFlowData)+'|where:'+JSON.stringify(wfWhere))
+            mUrWf.findOrCreate({where:wfWhere, defaults:workFlowData})
+            .spread((db,succeed) => {
+              let dbClone = {}
+              if(util.isDataFound(db)) dbClone.wfId = db.wfId
+              if(succeed) dbClone.editStatus = 'Inserted'
+              else dbClone.editStatus = 'Duplicate'
+              editResults.push(dbClone)
+              callback(null,succeed)
+            }).catch((err) => {
+              workFlowData.editStatus = 'Insert Error:'+err
+              editResults.push(workFlowData)
+              callback(err,null)
+            })
+          })
 
+          cmd = 'runAsyncTasks'
+          async.parallel(asyncTasks, (err,result)=>{
+            // All tasks are done now
+            // doSomethingOnceAllAreDone()
+            if(util.isDataFound(editResults)) logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,editResults}))
+            if(err){
+              logger.error(req,cmd+'|Error while run asyncTasks|'+err)
+              logger.summary(req,cmd+'|'+error.desc_01001)
+              if(util.isDataFound(editResults)) res.json(resp.getJsonError(error.code_01001,error.desc_01001,{contractId:tContractId,editResults}))
+              else res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+            }else{
+              logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result}))
+              return resp.getSuccess(req,res,cmd,{contractId:tContractId,editResults})
+            }
+          })
+        }else{
+          let err = 'Tasks not found'
+          logger.summary(req,cmd+'|'+error.desc_01001+'|'+err)
+          res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+        }
+      }else{
+        let err = 'Incomplete requestData'
+        logger.info(req,cmd+'|'+err)
+        return resp.getIncompleteParameter(req,res,cmd,err)
+      }
     }catch(err){
-      logger.error(req,cmd+'|'+err);
-      resp.getInternalError(req,res,cmd,err);
+      if(util.isDataFound(editResults)) logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,editResults}))
+      logger.error(req,cmd+'|'+err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 

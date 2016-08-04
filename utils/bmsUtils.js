@@ -29,20 +29,20 @@ const utils = {
 	},
 
 	isDataFound: (resObj) => {
-		try{
-			if(resObj==null || resObj=='undefined' || resObj==''){
-				return false;
-			}else{
-				if(resObj.length) return true;
+		// try{ //wrong result if check, let it error and send error response
+			if(resObj==null || resObj=='undefined' || resObj=='') return false //[],undefined,'',0,000
+			else{
+				if(resObj.length) return true //[1,2,3] ,'a','1' ('a'.length = 1)
 				else {
-					if (JSON.stringify(resObj).length>2) return true;
-					else return false;
+					if (JSON.stringify(resObj).length>2) return true //{......},123,
+					else if(/[0-9]/.test(resObj)) return true //0-9 (It is digit)
+					else return false //{}(1,12 if not check digit first)
 				}
 			}
-		}catch(err){
-			// logger.error('bmsUtils|idDataFound|'+err);
-			return false;
-		}
+		// }catch(err){ //undefined.length
+		// 	// logger.error('bmsUtils|idDataFound|'+err);
+		// 	return false;
+		// }
 	},
 
 	isDigit: (strDigit) => {

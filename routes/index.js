@@ -49,7 +49,8 @@ router.post('/location', location.queryByCriteria);
 router.post('/contract', contract.add);
 router.post('/getContract', contract.queryByCriteria);
 router.put('/contractBuilding', contract.editLocation);
-router.put('/contractVendorProfile', contract.editVendor);
+router.put('/contractVendorProfile', contract.editVendorAgent);
+router.put('/contractPayment', contract.editPayment);
 
 // ============================================================================
 // VendorProfile
