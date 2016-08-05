@@ -98,18 +98,22 @@ function writeLog(namePath,logMessage) //${LogTime}|${hostname}|${appname}|INCOM
 
 exports.info = (reqData, errMsg) =>
 {//${LogTime}|${hostname}|${appname}|INFO|Token|COMMAMD|Data|...
-    let error = ''
-    if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
-    let logMsg = getLogHeader('INFO',reqData)+error
-    writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg)
+    if(logCfg.log.process){
+        let error = ''
+        if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
+        let logMsg = getLogHeader('INFO',reqData)+error
+        writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg)
+    }
 }
 
 exports.error = (reqData, errMsg) =>
 {//${LogTime}|${hostname}|${appname}|ERROR|Token|COMMAMD|Data|...
-    let error = ''
-    if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
-    let logMsg = getLogHeader('ERROR',reqData)+error
-    writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg)
+    if(logCfg.log.process){
+        let error = ''
+        if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
+        let logMsg = getLogHeader('ERROR',reqData)+error
+        writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg)
+    }
 }
 
 exports.incoming = (reqData, errMsg) =>
@@ -135,7 +139,7 @@ exports.db = (reqData) =>
 
 exports.query = (reqData, errMsg) =>
 {
-    if(logCfg.log.queryResult ){
+    if(logCfg.log.queryResult){
         let error = ''
         if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
         let logMsg = getLogHeader('QUERY',reqData)+error

@@ -21,5 +21,6 @@ const mBuildingLocation = mCfg.sequelize.define('building_location', {
 
 mBuildingLocation.hasMany(mBuildingArea, {as:cst.models.locationAreas,foreignKey:'buildingId',targetKey:'buildingId'});
 mBuildingArea.hasMany(mBuildingDetail, {as:cst.models.areaDetails,foreignKey:'buildingAreaId',targetKey:'buildingAreaId'});
+mBuildingArea.belongsTo(mBuildingLocation, {as:cst.models.location, foreignKey:'buildingId', targetKey:'buildingId'});
 
 module.exports = mBuildingLocation;
