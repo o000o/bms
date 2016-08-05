@@ -250,26 +250,45 @@ const contract = {
 
   editLocation: (req, res) => {
     let cmd = 'editLocation'
+    let edit = {}
     try{
       if(util.isDataFound(req.body.requestData)&&util.isDataFound(req.body.requestData.contractId)&&util.isDataFound(req.body.requestData.urId)){
         let asyncTasks = [] // Array to hold async tasks
-        let tContractId = req.body.requestData.contractId
+        edit.contractId = req.body.requestData.contractId
+        edit.countPush = 0
+        edit.countSuccess = 0
+        edit.countError = 0
+        edit.editResults = []
         cmd = 'checkContractData'
         let ctData = JSON.parse(JSON.stringify(req.body.requestData))
         delete ctData.buildingLocation
         delete ctData.contractId
+        delete ctData.urId
+        delete ctData.urStatus
         if(util.isDataFound(ctData)){
           cmd = 'pushUpdateContractTask'
+          edit.countPush = edit.countPush + 1
           asyncTasks.push((callback)=>{
-            let ctWhere = {contractId:tContractId}
+            let ctWhere = {contractId:edit.contractId}
             logger.info(req,'runUpdateContractTask|contract:'+JSON.stringify(ctData)+'|where:'+JSON.stringify(ctWhere))
             mContract.update(ctData,{where:ctWhere}).then((succeed) => {
-              ctWhere.editStatus='Updated '+succeed+' rows'
-              callback(null,ctWhere)
+              // ctWhere.editStatus='Updated '+succeed+' rows'
+              if(util.isDataFound(succeed)){
+                edit.countSuccess = edit.countSuccess + 1
+                edit.editResults.push({contractId:edit.contractId,editStatus:'Updated '+succeed+' rows'})
+              }else{
+                edit.countError = edit.countError + 1
+                ctData.where = edit.contractId
+                ctData.editStatus='Update Error:'+succeed
+                edit.editResults.push(ctData)
+              }
+              callback()
             }).catch((err) => {
-              ctData.contractId=tContractId
+              edit.countError = edit.countError + 1
+              ctData.where = edit.contractId
               ctData.editStatus='Update Error:'+err
-              callback(err,ctData)
+              edit.editResults.push(ctData)
+              callback()
             })
           })
         }
@@ -283,22 +302,34 @@ const contract = {
           cmd = 'pushUpdateLocationTask'
           if(loData){
             if(tbuildingId){
+              edit.countPush = edit.countPush + 1
               asyncTasks.push((callback)=>{
                 let loWhere = {buildingId:tbuildingId}
                 logger.info(req,'runUpdateLocationTask|location:'+JSON.stringify(loData)+'|where:'+JSON.stringify(loWhere))
                 mLocation.update(loData,{where:loWhere}).then((succeed) => {
-                  callback(null,{buildingId:tbuildingId, editStatus:'Updated '+succeed+' rows'})
+                  if(util.isDataFound(succeed)){
+                    edit.countSuccess = edit.countSuccess + 1
+                    edit.editResults.push({buildingId:tbuildingId, editStatus:'Updated '+succeed+' rows'})
+                  }else{
+                    edit.countError = edit.countError + 1
+                    loData.where = tbuildingId
+                    loData.editStatus='Update Error:'+succeed
+                    edit.editResults.push(loData)
+                  }
+                  callback()
                 }).catch((err) => {
+                  edit.countError = edit.countError + 1
+                  loData.where = tbuildingId
                   loData.editStatus='Update Error:'+err
-                  callback(err,loData)
+                  edit.editResults.push(loData)
+                  callback()
                 })
               })
             }else{
-              asyncTasks.push((callback)=>{
-                loData.buildingId = tbuildingId
-                loData.editStatus = 'BadRequest:Can not update Location without buildingId'
-                callback(null,loData)
-              })
+              edit.countError = edit.countError + 1
+              loData.editStatus = 'BadRequest:Can not update Location without buildingId'
+              edit.editResults.push(loData)
+              callback()
             }
           }
 
@@ -306,56 +337,73 @@ const contract = {
           if(util.isDataFound(req.body.requestData.buildingLocation.buildingAreaList)){
             req.body.requestData.buildingLocation.buildingAreaList.forEach((item)=>{ // Loop through some items
               if(util.isDataFound(item.buildingAreaId) && item.editAction=='D'){ //delete
+                edit.countPush = edit.countPush + 1
                 asyncTasks.push((callback)=>{
                   mArea.destroy({where:{buildingAreaId:item.buildingAreaId}}).then((succeed) => {
-                    // editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Deleted '+succeed+' rows'})
-                    callback(null,{buildingAreaId:item.buildingAreaId, editStatus:'Deleted '+succeed+' rows'})
+                    edit.countSuccess = edit.countSuccess + 1
+                    edit.editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Deleted '+succeed+' rows'})
+                    callback()
                   }).catch((err) => {
-                    // editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Delete Error:'+err})
-                    callback(err,{buildingAreaId:item.buildingAreaId, editStatus:'Delete Error:'+err})
+                    edit.countError = edit.countError + 1
+                    edit.editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Delete Error:'+err})
+                    callback()
                   })
                 })
               }else if(!util.isDataFound(item.buildingAreaId) && item.editAction=='A' && tbuildingId){
                 //insert
+                edit.countPush = edit.countPush + 1
                 asyncTasks.push((callback)=>{
                   let jInsert = JSON.parse(JSON.stringify(item))
                   delete jInsert.editAction
-                  jInsert.contractId = tContractId
+                  jInsert.contractId = edit.contractId
                   jInsert.buildingId = tbuildingId
                   mArea.create(jInsert).then((succeed) => {
                     // logger.info(req,cmd+'|deleted '+ succeed +' records')
-                    // editResults.push({buildingAreaId:succeed.buildingAreaId, editStatus:'Inserted'})
-                    callback(null,{buildingAreaId:succeed.buildingAreaId, editStatus:'Inserted'})
+                    edit.countSuccess = edit.countSuccess + 1
+                    edit.editResults.push({buildingAreaId:succeed.buildingAreaId, editStatus:'Inserted'})
+                    callback()
                   }).catch((err) => {
                     // jInsert.editStatus='Insert Error:'+err
                     // editResults.push(jInsert)
                     item.editStatus='Insert Error:'+err
-                    callback(err,item)
+                    edit.countError = edit.countError + 1
+                    edit.editResults.push(item)
+                    callback()
                   })
                 })
               }else if(util.isDataFound(item.buildingAreaId) && item.editAction=='E'){
                 //update
+                edit.countPush = edit.countPush + 1
                 asyncTasks.push((callback)=>{
                   let jUpdate = JSON.parse(JSON.stringify(item))
                   delete jUpdate.editAction
                   delete jUpdate.buildingAreaId
                   mArea.update(jUpdate,{where:{buildingAreaId:item.buildingAreaId}}).then((succeed) => {
-                    // editResults.push({buildingAreaId:item.buildingAreaId,buildingId:tbuildingId, editStatus:'Updated '+succeed+' rows'})
-                    callback(null,{buildingAreaId:item.buildingAreaId, editStatus:'Updated '+succeed+' rows'})
+                    if(util.isDataFound(succeed)){
+                      edit.countSuccess = edit.countSuccess + 1
+                      edit.editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Updated '+succeed+' rows'})
+                    }else{
+                      edit.countError = edit.countError + 1
+                      jUpdate.where = item.buildingAreaId
+                      jUpdate.editStatus='Update Error:'+succeed
+                      edit.editResults.push(jUpdate)
+                    }
+                    callback()
                   }).catch((err) => {
                     // jUpdate.buildingAreaId = item.buildingAreaId
                     // jUpdate.editStatus='Update Error:'+err
                     // editResults.push(jUpdate)
-                    item.editStatus='Update Error:'+err
-                    callback(err,item)
+                    jUpdate.editStatus='Update Error:'+err
+                    jUpdate.where = item.buildingAreaId
+                    edit.countError = edit.countError + 1
+                    edit.editResults.push(jUpdate)
+                    callback()
                   })
                 })
               }else{ //conflict not insert or update DB
-                asyncTasks.push((callback)=>{
-                  item.editStatus = 'BadRequest:Conflict between data and editAction'
-                  // editResults.push(item)
-                  callback(null,item)
-                })
+                edit.countError = edit.countError + 1
+                item.editStatus = 'BadRequest:Conflict between data and editAction'
+                edit.editResults.push(item)
               }
             })
             logger.info(req,cmd+'|done')
@@ -370,21 +418,30 @@ const contract = {
           let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.editContractComplete
 
           cmd = 'pushUpdateUrStatusTask'
+          edit.countPush = edit.countPush + 1
           asyncTasks.push((callback)=>{
             let urWhere = {urId:req.body.requestData.urId, urStatus:{$ne:cStatus}}
             logger.info(req,'runUpdateUrStatusTask|urStatus:'+cStatus+'|where:'+JSON.stringify(urWhere))
             mUR.update({urStatus:cStatus},{where:urWhere}).then((succeed) => {
-              // editResults.push({urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
               // urWhere.editStatus='Updated '+succeed+' rows'
-              callback(null,{urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
+              if(util.isDataFound(succeed)){
+                edit.countSuccess = edit.countSuccess + 1
+                edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
+              }else{
+                edit.countError = edit.countError + 1
+                edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+succeed})
+              }
+              callback()
             }).catch((err) => {
-              // editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
               // urWhere.editStatus='Update Error:'+err
-              callback(err,{urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
+              edit.countError = edit.countError + 1
+              edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
+              callback()
             })
           })
 
           cmd = 'pushInsertWorkflowTask'
+          edit.countPush = edit.countPush + 1
           asyncTasks.push((callback)=>{
             let upBy = req.header('x-userTokenId') ? util.getUserName(req.header('x-userTokenId')):'system'
             let workFlowData = {urId:req.body.requestData.urId,urStatus:cStatus,updateBy:upBy}
@@ -396,27 +453,28 @@ const contract = {
               if(util.isDataFound(db)) dbClone.wfId = db.wfId
               if(succeed) dbClone.editStatus = 'Inserted'
               else dbClone.editStatus = 'Duplicate'
-              // editResults.push(dbClone)
-              callback(null,dbClone)
+              edit.countSuccess = edit.countSuccess + 1
+              edit.editResults.push(dbClone)
+              callback()
             }).catch((err) => {
+              edit.countError = edit.countError + 1
               workFlowData.editStatus = 'Insert Error:'+err
-              // editResults.push(workFlowData)
-              callback(err,workFlowData)
+              edit.editResults.push(workFlowData)
+              callback()
             })
           })
 
           cmd = 'runAsyncTasks'
-          async.parallel(asyncTasks, (err,editResults)=>{ // All tasks are done now
+          async.parallel(asyncTasks, ()=>{ // All tasks are done now
             // doSomethingOnceAllAreDone()
-            if(util.isDataFound(editResults)) logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,editResults}))
-            if(err){
-              logger.error(req,cmd+'|Error while run asyncTasks|'+err)
+            if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ JSON.stringify(edit))
+            if(edit.countError){
+              logger.error(req,cmd+'|Error while run asyncTasks|')
               logger.summary(req,cmd+'|'+error.desc_01001)
-              if(util.isDataFound(editResults)) res.json(resp.getJsonError(error.code_01001,error.desc_01001,{contractId:tContractId,editResults}))
-              else res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+              res.json(resp.getJsonError(error.code_01001,error.desc_01001,edit))
             }else{
-              // logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result:result}))
-              return resp.getSuccess(req,res,cmd,{contractId:tContractId,editResults})
+              // logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result}))
+              return resp.getSuccess(req,res,cmd,edit)
             }
           })
         }else{
@@ -430,50 +488,10 @@ const contract = {
         return resp.getIncompleteParameter(req,res,cmd,err)
       }
     }catch(err){
-      // if(util.isDataFound(editResults)) logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,editResults}))
+      if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ JSON.stringify(edit))
       logger.error(req,cmd+'|'+err)
       resp.getInternalError(req,res,cmd,err)
-    } 
-
-
-
-
-// //=================================================
-//       cmd = 'asyncTasks'
-//       // Array to hold async tasks
-//       let asyncTasks = []
-       
-//       // Loop through some items
-//       items.forEach((item)=>{
-//         // We don't actually execute the async action here
-//         // We add a function containing it to an array of "tasks"
-//         asyncTasks.push((callback)=>{
-//           // Call an async function, often a save() to DB
-//           item.someAsyncCall(()=>{
-//             // Async call is done, alert via callback
-//             callback()
-//           });
-//         });
-//       });
-
-//       // To move beyond the iteration example, let's add
-//       // another (different) async task for proof of concept
-//       asyncTasks.push((callback)=>{
-//         // Set a timeout for 3 seconds
-//         setTimeout(()=>{
-//           // It's been 3 seconds, alert via callback
-//           callback()
-//         }, 3000)
-//       });
-       
-//       // Now we have an array of functions doing async tasks
-//       // Execute all async tasks in the asyncTasks array
-//       async.parallel(asyncTasks, ()=>{
-//         // All tasks are done now
-//         doSomethingOnceAllAreDone()
-//       })
-
-
+    }
   },
 
   editVendorAgent: (req, res) => {
@@ -586,65 +604,84 @@ const contract = {
 
   editPayment: (req, res) => {
     let cmd = 'editPayment'
-    let editResults = []
+    let edit = {}
     try{
       if(util.isDataFound(req.body.requestData)&&util.isDataFound(req.body.requestData.contractPaymentList)
         &&util.isDataFound(req.body.requestData.contractId)&&util.isDataFound(req.body.requestData.urId)){
         let asyncTasks = [] // Array to hold async tasks
-        let tContractId = req.body.requestData.contractId
+        edit.contractId = req.body.requestData.contractId
+        edit.countPush = 0
+        edit.countSuccess = 0
+        edit.countError = 0
+        edit.editResults = []
+
         cmd = 'pushPaymentListTasks'
         req.body.requestData.contractPaymentList.forEach((item)=>{ // Loop through some items
           if(util.isDataFound(item.contractPaymentId) && item.editAction=='D'){ //delete
+            edit.countPush = edit.countPush + 1
             asyncTasks.push((callback)=>{
               mPayment.destroy({where:{contractPaymentId:item.contractPaymentId}}).then((succeed) => {
                 // logger.info(req,cmd+'|deleted '+ succeed +' records')
-                editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Deleted '+succeed+' rows'})
-                callback(null,succeed)
+                edit.editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Deleted '+succeed+' rows'})
+                edit.countSuccess = edit.countSuccess + 1
+                callback()
               }).catch((err) => {
                 // logger.error(req,cmd+'|Error while delete contractPayments|'+err)
-                editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Delete Error:'+err})
-                callback(err,null)
+                edit.editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Delete Error:'+err})
+                edit.countError = edit.countError + 1
+                callback()
               })
             })
           }else if(!util.isDataFound(item.contractPaymentId) && item.editAction=='A'){
             //insert
+            edit.countPush = edit.countPush + 1
             asyncTasks.push((callback)=>{
               let jInsert = JSON.parse(JSON.stringify(item))
               delete jInsert.editAction
-              jInsert.contractId = tContractId
+              jInsert.contractId = edit.contractId
               mPayment.create(jInsert).then((succeed) => {
                 // logger.info(req,cmd+'|deleted '+ succeed +' records')
-                editResults.push({contractPaymentId:succeed.contractPaymentId, editStatus:'Inserted'})
-                callback(null,succeed)
+                edit.editResults.push({contractPaymentId:succeed.contractPaymentId, editStatus:'Inserted'})
+                edit.countSuccess = edit.countSuccess + 1
+                callback()
               }).catch((err) => {
                 jInsert.editStatus='Insert Error:'+err
-                editResults.push(jInsert)
-                callback(err,null)
+                edit.editResults.push(jInsert)
+                edit.countError = edit.countError + 1
+                callback()
               })
             })
           }else if(util.isDataFound(item.contractPaymentId) && item.editAction=='E'){
             //update
+            edit.countPush = edit.countPush + 1
             asyncTasks.push((callback)=>{
               let jUpdate = JSON.parse(JSON.stringify(item))
               delete jUpdate.editAction
               delete jUpdate.contractPaymentId
               mPayment.update(jUpdate,{where:{contractPaymentId:item.contractPaymentId}}).then((succeed) => {
-                editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Updated '+succeed+' rows'})
-              // mPayment.upsert(jWhere).then((succeed) => { //"notNull Violation" <= Problem with start&end date even when want to update
-                // logger.info(req,cmd+'|deleted '+ succeed +' records')
-                // if(succeed) editResults.push({contractPaymentId:item.contractPaymentId, upsert:'Inserted'})
-                // else editResults.push({contractPaymentId:item.contractPaymentId, upsert:'Updated'})
-                callback(null,succeed)
+                if(util.isDataFound(succeed)){
+                  edit.editResults.push({contractPaymentId:item.contractPaymentId, editStatus:'Updated '+succeed+' rows'})
+                  edit.countSuccess = edit.countSuccess + 1
+                }else{
+                  edit.countError = edit.countError + 1
+                  jUpdate.where = item.contractPaymentId
+                  jUpdate.editStatus='Update Error:'+succeed
+                  edit.editResults.push(jUpdate)
+                }
+                callback()
               }).catch((err) => {
-                jUpdate.contractPaymentId = item.contractPaymentId
+                // jUpdate.contractPaymentId = item.contractPaymentId
+                jUpdate.where = item.contractPaymentId
                 jUpdate.editStatus='Update Error:'+err
-                editResults.push(jUpdate)
-                callback(err,null)
+                edit.editResults.push(jUpdate)
+                edit.countError = edit.countError + 1
+                callback()
               })
             })
           }else{ //conflict not insert or update DB
+            edit.countError = edit.countError + 1
             item.editStatus = 'BadRequest:Conflict between data and editAction'
-            editResults.push(item)
+            edit.editResults.push(item)
           }
         })
         logger.info(req,cmd+'|done')
@@ -656,21 +693,30 @@ const contract = {
           let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.editContractComplete
 
           cmd = 'pushUpdateUrStatusTask'
+          edit.countPush = edit.countPush + 1
           asyncTasks.push((callback)=>{
             let urWhere = {urId:req.body.requestData.urId, urStatus:{$ne:cStatus}}
             logger.info(req,'runUpdateUrStatusTask|urStatus:'+cStatus+'|where:'+JSON.stringify(urWhere))
             mUR.update({urStatus:cStatus},{where:urWhere}).then((succeed) => {
               // urWhere.editStatus='Updated '+succeed+' rows' //urId become ur_id if use this line
-              editResults.push({urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
-              callback(null,succeed)
+              if(util.isDataFound(succeed)){
+                edit.countSuccess = edit.countSuccess + 1
+                edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
+              }else{
+                edit.countError = edit.countError + 1
+                edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+succeed})
+              }
+              callback()
             }).catch((err) => {
               // urWhere.editStatus='Update Error:'+err //urId become ur_id if use this line
-              editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
-              callback(err,null)
+              edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
+              edit.countError = edit.countError + 1
+              callback()
             })
           })
-          
+
           cmd = 'pushInsertWorkflowTask'
+          edit.countPush = edit.countPush + 1
           asyncTasks.push((callback)=>{
             let upBy = req.header('x-userTokenId') ? util.getUserName(req.header('x-userTokenId')):'system'
             let workFlowData = {urId:req.body.requestData.urId,urStatus:cStatus,updateBy:upBy}
@@ -682,28 +728,29 @@ const contract = {
               if(util.isDataFound(db)) dbClone.wfId = db.wfId
               if(succeed) dbClone.editStatus = 'Inserted'
               else dbClone.editStatus = 'Duplicate'
-              editResults.push(dbClone)
-              callback(null,succeed)
+              edit.editResults.push(dbClone)
+              edit.countSuccess = edit.countSuccess + 1
+              callback()
             }).catch((err) => {
               workFlowData.editStatus = 'Insert Error:'+err
-              editResults.push(workFlowData)
-              callback(err,null)
+              edit.editResults.push(workFlowData)
+              edit.countError = edit.countError + 1
+              callback()
             })
           })
 
           cmd = 'runAsyncTasks'
-          async.parallel(asyncTasks, (err,result)=>{
+          async.parallel(asyncTasks, (result)=>{
             // All tasks are done now
             // doSomethingOnceAllAreDone()
-            if(util.isDataFound(editResults)) logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,editResults}))
-            if(err){
-              logger.error(req,cmd+'|Error while run asyncTasks|'+err)
+            if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ JSON.stringify(edit))
+            if(edit.countError){
+              logger.error(req,cmd+'|Error while run asyncTasks|')
               logger.summary(req,cmd+'|'+error.desc_01001)
-              if(util.isDataFound(editResults)) res.json(resp.getJsonError(error.code_01001,error.desc_01001,{contractId:tContractId,editResults}))
-              else res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+              res.json(resp.getJsonError(error.code_01001,error.desc_01001,edit))
             }else{
-              logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result}))
-              return resp.getSuccess(req,res,cmd,{contractId:tContractId,editResults})
+              // logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result}))
+              return resp.getSuccess(req,res,cmd,edit)
             }
           })
         }else{
@@ -717,7 +764,7 @@ const contract = {
         return resp.getIncompleteParameter(req,res,cmd,err)
       }
     }catch(err){
-      if(util.isDataFound(editResults)) logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,editResults}))
+      if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ JSON.stringify(edit))
       logger.error(req,cmd+'|'+err)
       resp.getInternalError(req,res,cmd,err)
     }

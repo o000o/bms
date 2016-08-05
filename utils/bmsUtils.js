@@ -30,7 +30,7 @@ const utils = {
 
 	isDataFound: (resObj) => {
 		// try{ //wrong result if check, let it error and send error response
-			if(resObj==null || resObj=='undefined' || resObj=='') return false //[],undefined,'',0,000
+			if(resObj==null || resObj=='undefined' || resObj=='' || resObj=='NaN') return false //[],undefined,'',0,000
 			else{
 				if(resObj.length) return true //[1,2,3] ,'a','1' ('a'.length = 1)
 				else {
