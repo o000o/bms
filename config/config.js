@@ -38,9 +38,10 @@ config.log.logPath = 'logs/'
 config.log.logDbPath = 'logs/db'
 config.log.projectName = 'BMS'
 config.log.logTime = 15
-config.log.queryResult = false
+config.log.queryResult = true
 config.log.db = true
-config.log.process = true
+config.log.info = true
+config.log.error = true
 
 // Token
 config.expires = 30 // minutes
@@ -48,7 +49,7 @@ config.renewTokenTime = 10 // minutes, time left before token expire
 config.interceptRespCode = ['00000','01001','01002','01003','01004'] //responseCode that will get new Token
 
 // Regular Format
-// config.regUserName = /^[a-zA-Z0-9]+$/;
+// config.regUserName = /^[a-zA-Z0-9]+$/
 config.regDigit = /^[0-9]+$/
 
 // Response Json

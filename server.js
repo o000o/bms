@@ -9,6 +9,7 @@ const cfg = require('./config/config')
 const resp = require('./utils/respUtils')
 const error = require('./config/error')
 const auth = require('./routes/auth.js')
+const util = require('./utils/bmsUtils')
 // const keepAlive = require('./routes/keepAlive')
 // const mlogger = require('morgan')
 // const https = require('https')
@@ -19,33 +20,30 @@ const app = express()
 app.use(bodyParser.urlencoded({
   extended: true,
   limit: '50mb'
-}));
+}))
 app.use(bodyParser.json({ limit: '50mb'}))
 
 const corsPolicy = {
   origin: cfg.origin,
   methods: cfg.methods,
   allowedHeaders: cfg.allowedHeaders
-};
+}
 app.use(cors(corsPolicy))
 
-// app.all([require('./utils/logUtils')],incoming()); //Not Work
-
 app.use((req, res, next) => { //Incoming
-  // let transaction = moment(new Date()).tz('Asia/Bangkok').format('YYYYMMDDHHmmss')
-  // let ooo = JSON.parse(JSON.stringify(req))
-  // ooo.sysTransaction = transaction
-  // req = ooo
+  let uName = req.header('x-userTokenId') ? ('_'+util.getUserName(req.header('x-userTokenId'))) : ''
+  if((uName=='') && util.isDataFound(req.body.requestData.userName)) uName = '_'+req.body.requestData.userName
+  req.ssid = moment(new Date()).tz('Asia/Bangkok').format('YYYYMMDDHHmmss') + uName
   logger.incoming(req)
   next()
 })
 
-app.use((err, req, res, next) =>{
-  logger.incoming(req,err);
+app.use((err, req, res, next) =>{ //Incoming and error
+  let uName = req.header('x-userTokenId') ? ('_'+util.getUserName(req.header('x-userTokenId'))) : ''
+  if((uName=='') && util.isDataFound(req.body.requestData.userName)) uName = '_'+req.body.requestData.userName
+  req.ssid = moment(new Date()).tz('Asia/Bangkok').format('YYYYMMDDHHmmss') + uName
+  logger.incoming(req,err)
   if (err instanceof SyntaxError) {
-    // res.status(err.status || 400);
-    // logger.summary(req,'SyntaxError|Incomplete Parameter');
-    // return res.json(resp.getJsonError(error.code_00005, error.desc_00005, err.message));
     return resp.getIncompleteParameter(req,res,'SyntaxError',err)
   } else next()
 })
@@ -57,7 +55,7 @@ app.post('/bms/login/user', auth.login)
 // Only the requests that start with /api/v1/* will be checked for the token.
 // Any URL's that do not follow the below pattern should be avoided unless you
 // are sure that authentication is not needed
-// app.all('/bms/*', [require('./middlewares/validateRequest')]);
+app.all('/bms/*', [require('./middlewares/validateRequest')])
 // Add the interceptor middleware for renew token
 app.use('/bms/*', [require('./middlewares/interceptResponse')])
 app.use('/bms/', require('./routes'))
@@ -66,7 +64,7 @@ app.use('/bms/', require('./routes'))
 app.use((req, res, next) => {
   // logger.info(req,'Unknow URL')
   logger.summary(req,'Unknow URL')
-  res.status(404);
+  res.status(404)
   res.json(resp.getJsonError(error.code_00004, error.desc_00004))
   next()
 })
@@ -74,11 +72,7 @@ app.use((req, res, next) => {
 // Catch 500 Error
 app.use((err, req, res, next) => {
   logger.error(req,err)
-  // res.status(err.status || 500)
-  // logger.summary(req,'Server Catch 500 Error')
-  // return res.json(resp.getJsonError(error.code_00003, error.desc_00003, err.message))
   return resp.getInternalError(req,res,'Server Catch 500',err)
-  // res.json(resp.getJsonError(error.code_00003, error.desc_00003, err))
 })
 
 // Start the server
