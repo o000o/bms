@@ -6,7 +6,7 @@ const cst = require('../config/constant');
 const mUrWf = require('./mUrWorkFlow');
 
 const mUR = mCfg.sequelize.define('user_request', {
-	urId: {type: Sequelize.STRING , primaryKey: true, field: 'ur_id', allowNull: false, defaultValue: Sequelize.fn('geturid')},
+	urId: {type: Sequelize.STRING , primaryKey: true, field: 'ur_id', allowNull: true, autoIncrement: true},
 	urDate: {type: Sequelize.DATEONLY, field: 'ur_date', allowNull: false, defaultValue: Sequelize.NOW, 
 		get: function()  {return mCfg.correctTime(this.getDataValue('urDate'));}
 	},

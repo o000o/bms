@@ -12,7 +12,7 @@ const mPayment = require('./mContractPayment');
 const mContractAgent = require('./mContractAgent');
 
 const mContract = mCfg.sequelize.define('contract', {
-	contractId: { type: Sequelize.STRING, field: 'contract_id', primaryKey: true, allowNull: false, defaultValue: Sequelize.fn('getcontractid')},
+	contractId: { type: Sequelize.STRING, field: 'contract_id', primaryKey: true, allowNull: true, autoIncrement: true},
 	vendorId: { type: Sequelize.INTEGER, field: 'vendor_id', allowNull: true },
 	contractNo: { type: Sequelize.STRING, field: 'contract_no', allowNull: false},
 	createContractDate: { type: Sequelize.DATEONLY, field: 'create_contract_date', allowNull: false, defaultValue: Sequelize.NOW,

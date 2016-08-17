@@ -1,29 +1,48 @@
 'use strict'
 
-const constant = module.exports = {};
+const constant = module.exports = {}
 
 //workflow & UR status
-constant.wDmApproval = "W_DM_APPROVAL"
-constant.dmApproved = "DM_APPROVAL"
-constant.dmRejected = "DM_REJECT"
-constant.adminRejected = "ADMIN_REJECT"
-constant.adminAccept = "ADMIN_ACCEPT"
-constant.complete = "COMPLETE"
-constant.close = "CLOSE"
-constant.editContractComplete = "EDITED_CONTRACT"
-constant.editContractWait = "W_EDIT_CONTRACT"
+constant.status = {}
+constant.status.wDmApproval = "W_DM_APPROVAL"
+constant.status.dmApproved = "DM_APPROVAL"
+constant.status.dmRejected = "DM_REJECT"
+constant.status.adminRejected = "ADMIN_REJECT"
+constant.status.adminAccept = "ADMIN_ACCEPT"
+constant.status.complete = "COMPLETE"
+constant.status.editContractComplete = "EDITED_CONTRACT"
+constant.status.editContractWait = "W_EDIT_CONTRACT"
+// constant.status.renewContract = "W_RENEW_CONTRACT"
+// constant.status.cancelContract = "W_CANCEL_CONTRACT"
+
+constant.urType = {}
+constant.urType.editContract = "EDIT_CONTRACT"
+constant.urType.renewContract = "RENEW_CONTRACT"
+constant.urType.cancelContract = "CANCEL_CONTRACT"
+constant.urType.rental = "RENTAL"
+constant.urType.move = "MOVEMENT"
 
 //notification group
-constant.myUr = "My Request"
-constant.Ur = "User Request"
+constant.notification = {}
+constant.notification.myUr = "My Request"
+constant.notification.Ur = "User Request"
 
 //userType
-constant.admin = ['CENTERADMIN','AISADMIN']
-constant.dm = ['DM','MANAGER']
-constant.user = ['USER']
+constant.userType = {}
+constant.userType.user = 'USER'
+constant.userType.manager = 'MANAGER'
+constant.userType.centerAdmin = 'CENTER_ADMIN'
+constant.userType.managerAdmin = 'MANAGER_ADMIN'
+constant.userType.accountant = 'ACCOUNTANT'
+constant.userType.system = 'SYSTEM'
+
+constant.userGroup = {}
+constant.userGroup.admin = [constant.userType.managerAdmin,constant.userType.centerAdmin]
+constant.userGroup.manager = [constant.userType.manager,constant.userType.managerAdmin]
+constant.userGroup.user = [constant.userType.user]
 
 //table name for response
-constant.models={};
+constant.models = {}
 constant.models.urWorkflows = "urWorkflowList"
 constant.models.locationAreas = "buildingAreaList"
 constant.models.areaDetails = "buildingDetailList"

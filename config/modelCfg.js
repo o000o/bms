@@ -13,27 +13,27 @@ mCfg.timeZone = 'Asia/Bangkok'
 
 //**** Connect mySQL ****
 mCfg.sequelize = new Sequelize(cfg.dbName, cfg.dbUser, cfg.dbPwd, {
-// mCfg.sequelize = new Sequelize('ooo', 'ooo', '000', {
+// 	dialect: 'postgres', //'mysql',
+
+// // mCfg.sequelize = new Sequelize('ooo', 'ooo', '000', {
+  // host: '10.252.176.111',
+// **** Connect msSQL ****
+// mCfg.sequelize = new Sequelize('BMSDB', 'bmsadmin', 'P@ssw0rd', {
+// mCfg.sequelize = new Sequelize(cfg.dbName, 'bmsadmin', 'P@ssw0rd', {
+	dialect: 'mssql',
+	// host: '10.252.163.130',
+	port: 1433,
+//************************
+	host: cfg.dbHost,
 	timezone:'+07:00',
 	logging: logdb,
 	benchmark: false,
-	// logging: console.log,
-	// logging: false,
-	// quoteIdentifiers: false,
+	quoteIdentifiers: false,
 	native:false,
 	omitNull:true,
-	dialect: 'postgres', //'mysql',
-	host: cfg.dbHost,
-  // host: '10.252.176.111',
-//**** Connect msSQL ****
-// config.sequelize = new Sequelize('BMSDB', 'bmsadmin', 'P@ssw0rd', {
-// 	dialect: 'mssql',
-// 	host: '10.252.163.130',
-// 	port: 1433,
-
 	protocol: 'tcp',
 	retry:{max: 3},
-	// dialectOptions: {insecureAuth: true}, //Only need for pc connect
+	dialectOptions: {insecureAuth: true}, //Only need for pc connect
 	pool: {
 		max: cfg.poolMax,
 		min: 0,

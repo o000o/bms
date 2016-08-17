@@ -21,8 +21,8 @@ config.https.options = {
 config.dbName = 'Bldgdev'
 // config.dbUser = 'admin'
 // config.dbPwd = 'P@ssw0rd'
-config.dbUser = 'postgres'
-config.dbPwd = 'postgres'
+config.dbUser = 'bmsadmin' //'postgres'
+config.dbPwd = 'P@ssw0rd' //'postgres'
 config.dbHost = '10.252.163.130'
 config.timeFormat = 'YYYY-MM-DD HH:mm:ss'
 config.poolMax = 5
@@ -38,10 +38,11 @@ config.log.logPath = 'logs/'
 config.log.logDbPath = 'logs/db'
 config.log.projectName = 'BMS'
 config.log.logTime = 15
-config.log.queryResult = true
 config.log.db = true
 config.log.info = true
 config.log.error = true
+config.log.queryResult = false
+config.log.debug = false
 
 // Token
 config.expires = 30 // minutes
@@ -66,6 +67,11 @@ config.om.options = {wsdl_options:{
     password: "OM@stg!#2014",
     domain: "corp-ais900dev"
 }}
+config.om.bypass = false //true for test before connect single signon
+config.om.managerEmail = 'kittilau@corp.ais900dev.org' //use when om.bypass=true
+config.om.managerUser = 'kittilau' //use when om.bypass=true
+config.om.email = 'siripoko@corp.ais900dev.org' //use when om.bypass=true
+config.om.user = 'siripoko' //use when om.bypass=true
 
 // Email Notification to DM
 config.email = {}
