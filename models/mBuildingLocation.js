@@ -16,7 +16,9 @@ const mBuildingLocation = mCfg.sequelize.define('building_location', {
 	province: { type: Sequelize.STRING, allowNull: false},
 	postalCode: { type: Sequelize.STRING, field: 'postal_code', allowNull: false},
 	region: { type: Sequelize.STRING, allowNull: false},
-	location: { type: Sequelize.STRING, allowNull: true}
+	location: { type: Sequelize.STRING, allowNull: true},
+	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
+        createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
 },{freezeTableName: true, timestamps: false});
 
 mBuildingLocation.hasMany(mBuildingArea, {as:cst.models.locationAreas,foreignKey:'buildingId',targetKey:'buildingId'});

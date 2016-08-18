@@ -24,8 +24,14 @@ const vendorProfile = {
                     as: 'vendorContactList'
                 }]
             }).spread((db, succeed) => {
-                logger.info(req, cmd + '|Data:' + JSON.stringify(req.body.requestData) + '|Create complete')
-                return resp.getSuccess(req, res, cmd, db)
+                if (succeed) {
+                    logger.info(req, cmd + '|Data:' + JSON.stringify(req.body.requestData) + '|Create complete')
+                    return resp.getSuccess(req, res, cmd, db)
+                } else { //vendor existed
+                    logger.error(req, cmd + '|Error:' + error.desc_01004)
+                    logger.summary(req, cmd + '|Error:' + error.desc_01004)
+                    res.json(resp.getJsonError(error.code_01004, error.desc_01004, db))
+                }
             }).catch((err) => {
                 logger.error(req, cmd + '|Data:' + JSON.stringify(req.body.requestData) + '|Error:' + err)
                 logger.summary(req, cmd + '|' + error.desc_01001)
@@ -39,23 +45,33 @@ const vendorProfile = {
     edit: (req, res) => {
         let cmd = 'UpdateVendorProfile'
         try {
-            let asyncTasks = []            
+            let asyncTasks = []
             let requestData = JSON.parse(JSON.stringify(req.body.requestData));
             if (util.isDataFound(requestData.vendorContactList)) {
                 delete requestData.vendorContactList
             }
             asyncTasks.push((callback) => {
-                mVendorProfile.update(requestData, {
-                    where: {
-                        vendorId: requestData.vendorId
-                    }
-                }).then((succeed) => {
-                    logger.info(req, 'UpdateVendorProfile|Data:' + JSON.stringify(requestData) + '|Update complete')
-                    callback(null, succeed)
-                }).catch((err) => {
-                    logger.error(req, 'UpdateVendorProfile|Data:' + JSON.stringify(requestData) + '|Error:' + err)
-                    callback(err, null)
-                })
+                if (requestData.vendorId) {
+                    mVendorProfile.update(requestData, {
+                        where: {
+                            vendorId: requestData.vendorId
+                        }
+                    }).then((succeed) => {
+                        if (succeed > 0) {
+                            logger.info(req, 'UpdateVendorProfile|Data:' + JSON.stringify(requestData) + '|Update complete')
+                            callback(null, succeed)
+                        } else {
+                            logger.error(req, 'UpdateVendorProfile|Data:' + JSON.stringify(requestData) + '|Error:Not found Vendor Profile')
+                            callback('Not found Vendor Profile', null)
+                        }
+                    }).catch((err) => {
+                        logger.error(req, 'UpdateVendorProfile|Data:' + JSON.stringify(requestData) + '|Error:' + err)
+                        callback(err, null)
+                    })
+                } else {
+                    logger.error(req, 'UpdateVendorProfile|Data:' + JSON.stringify(requestData) + '|Error:' + error.desc_00005)
+                    callback(error.desc_00005, null)
+                }
             })
             logger.info(req, 'UpdateVendorProfile|ReqData:' + JSON.stringify(req.body.requestData))
             if (util.isDataFound(req.body.requestData.vendorContactList)) {
@@ -69,10 +85,15 @@ const vendorProfile = {
                                     vendorContactId: vendorContact.vendorContactId
                                 }
                             }).then((succeed) => {
-                                logger.info(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Update complete')
-                                callback(null, succeed)
+                                if (succeed > 0) {
+                                    logger.info(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Update complete')
+                                    callback(null, succeed)
+                                } else {
+                                    logger.error(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Error:Not found Vendor Profile Contact')
+                                    callback('Not found Vendor Profile Contact', null)
+                                }
                             }).catch((err) => {
-                                logger.error(req, 'UpdateVendorContact|Error:' + err)
+                                logger.error(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Error:' + err)
                                 callback(err, null)
                             })
                         })
@@ -84,7 +105,7 @@ const vendorProfile = {
                                 logger.info(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Create complete')
                                 callback(null, succeed)
                             }).catch((err) => {
-                                logger.error(req, 'UpdateVendorContact|Error:' + err)
+                                logger.error(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Error:' + err)
                                 callback(err, null)
                             })
                         })
@@ -92,17 +113,27 @@ const vendorProfile = {
                         delete vendorContact.editAction
                         logger.info(req, cmd + '|where:' + JSON.stringify(JWhere))
                         asyncTasks.push((callback) => {
-                            mVendorContact.destroy({
-                                where: {
-                                    vendorContactId: vendorContact.vendorContactId
-                                }
-                            }).then((succeed) => {
-                                logger.info(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Deleted ' + succeed + ' records')
-                                callback(null, succeed)
-                            }).catch((err) => {
-                                logger.error(req, 'UpdateVendorContact|Error:' + err)
-                                callback(err, null)
-                            })
+                            if (vendorContact.vendorContactId) {
+                                mVendorContact.destroy({
+                                    where: {
+                                        vendorContactId: vendorContact.vendorContactId
+                                    }
+                                }).then((succeed) => {
+                                    if (succeed > 0) {
+                                        logger.info(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Deleted ' + succeed + ' records')
+                                        callback(null, succeed)
+                                    } else {
+                                        logger.error(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Error:Not found Vendor Profile Contact')
+                                        callback('Not found Vendor Profile Contact', null)
+                                    }
+                                }).catch((err) => {
+                                    logger.error(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Error:' + err)
+                                    callback(err, null)
+                                })
+                            } else {
+                                logger.error(req, 'UpdateVendorContact|Data:' + JSON.stringify(vendorContact) + '|Error:' + error.desc_00005)
+                                callback(error.desc_00005, null)
+                            }
                         })
                     }
                 })
@@ -123,18 +154,29 @@ const vendorProfile = {
     delete: (req, res) => {
         let cmd = 'DeleteVendorProfile'
         try {
-            mVendorProfile.destroy({
-                where: {
-                    vendorId: req.params.vendorId
-                }
-            }).then((succeed) => {
-                logger.info(req, cmd + '|Data:\"vendorId\": \"' + req.params.vendorId + '\"|Deleted ' + succeed + ' records')
-                return resp.getSuccess(req, res, cmd)
-            }).catch((err) => {
-                logger.error(req, cmd + '|Data:\"vendorId\": \"' + req.params.vendorId + '\"|Error:' + err)
-                logger.summary(req, cmd + '|' + error.desc_01001)
-                res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
-            })
+            if (req.params.vendorId) {
+                mVendorProfile.destroy({
+                    where: {
+                        vendorId: req.params.vendorId
+                    }
+                }).then((succeed) => {
+                    if (succeed > 0) {
+                        logger.info(req, cmd + '|Data:\"vendorId\": \"' + req.params.vendorId + '\"|Deleted ' + succeed + ' records')
+                        return resp.getSuccess(req, res, cmd)
+                    } else {
+                        logger.error(req, cmd + '|Not Found VendorProfile')
+                        logger.summary(req, cmd + '|Not Found VendorProfile')
+                        res.json(resp.getJsonError(error.code_01003, error.desc_01003, 'Not Found VendorProfile'))
+                    }
+                }).catch((err) => {
+                    logger.error(req, cmd + '|Data:\"vendorId\": \"' + req.params.vendorId + '\"|Error:' + err)
+                    logger.summary(req, cmd + '|' + error.desc_01001)
+                    res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
+                })
+            } else {
+                logger.error(req, cmd + '|Error:' + error.desc_00005)
+                return resp.getIncompleteParameter(req, res, cmd)
+            }
         } catch (err) {
             logger.error(req, cmd + '|' + err)
             return resp.getInternalError(req, res, cmd, err)
@@ -200,6 +242,7 @@ const vendorProfile = {
                         "vendorProfileList": db.rows
                     })
                 } else {
+                    logger.error(req, cmd + '|Not Found VendorProfile')
                     logger.summary(req, cmd + '|Not Found VendorProfile')
                     res.json(resp.getJsonError(error.code_01003, error.desc_01003, db))
                 }

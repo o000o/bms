@@ -7,15 +7,15 @@ const mUrWf = require('./mUrWorkFlow');
 
 const mUR = mCfg.sequelize.define('user_request', {
 	urId: {type: Sequelize.STRING , primaryKey: true, field: 'ur_id', allowNull: true, autoIncrement: true},
-	urDate: {type: Sequelize.DATEONLY, field: 'ur_date', allowNull: false, defaultValue: Sequelize.NOW, 
-		get: function()  {return mCfg.correctTime(this.getDataValue('urDate'));}
+	urDate: {type: Sequelize.DATEONLY, field: 'ur_date', allowNull: false, defaultValue: Sequelize.NOW//, 
+		//get: function()  {return mCfg.correctTime(this.getDataValue('urDate'));}
 	},
 	urType: {type: Sequelize.STRING, field: 'ur_type', allowNull: false},
 	company: {type: Sequelize.STRING, allowNull: true },
 	department: {type: Sequelize.STRING, allowNull: true },
 	urDetail: {type: Sequelize.STRING, field: 'ur_detail', allowNull: false },
-	expectDate: {type: Sequelize.DATEONLY, field: 'expect_date', allowNull: true, 
-		get: function()  {return mCfg.correctTime(this.getDataValue('expectDate'));}
+	expectDate: {type: Sequelize.DATEONLY, field: 'expect_date', allowNull: true//, 
+		//get: function()  {return mCfg.correctTime(this.getDataValue('expectDate'));}
 	},
 	urBy: {type: Sequelize.STRING, field: 'ur_by', allowNull: false},
 	urStatus: {type: Sequelize.STRING, field: 'ur_status', allowNull: false},
@@ -23,6 +23,7 @@ const mUR = mCfg.sequelize.define('user_request', {
 	areaSize: {type: Sequelize.REAL, field: 'area_size', allowNull: true},
 	unitArea: {type: Sequelize.STRING, field: 'unit_area', allowNull: true},
 	empTotal: {type: Sequelize.INTEGER, field: 'emp_total', allowNull: true},
+	outsourceEmpTotal: {type: Sequelize.INTEGER, field: 'outsource_emp_total', allowNull: true},
 	rentalDayAmount: {type: Sequelize.STRING, field: 'rental_use_amount', allowNull: true},
 	amphur: {type: Sequelize.STRING, allowNull: true},
 	province: {type: Sequelize.STRING, allowNull: true},

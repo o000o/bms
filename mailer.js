@@ -9,7 +9,7 @@ var transporter = nodemailer.createTransport({
 
 // setup e-mail data with unicode symbols
 
-var htmlstream = fs.createReadStream('content.html');
+var htmlstream = fs.createReadStream('./config/content.html');
 var mailOptions = {
     from: 'bms_dev@corp.ais900dev.org', // sender address
     to: 'kittilau@corp.ais900dev.org', // list of receivers

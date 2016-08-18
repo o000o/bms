@@ -1,30 +1,18 @@
 'use strict'
 
-const cfg = require('../config/config');
-const shhh = require('../config/secret.js');
-// const logger = require('./logUtils');
-const jwt = require('jwt-simple');
+const cfg = require('../config/config')
+const shhh = require('../config/secret.js')
+const logger = require('./logUtils')
+const jwt = require('jwt-simple')
+const util = require('util')
 
 const utils = {
-	simpleStringify: (object) => { //not use
+	jsonToText: (object) => { //not use
 		try{
-		    var simpleObject = {};
-		    for (var prop in object ){
-		        if (!object.hasOwnProperty(prop)){
-		            continue;
-		        }
-		        if (typeof(object[prop]) == 'object'){
-		            continue;
-		        }
-		        if (typeof(object[prop]) == 'function'){
-		            continue;
-		        }
-		        simpleObject[prop] = object[prop];
-		    }
-		    return JSON.stringify(simpleObject); // returns cleaned up JSON
+			return JSON.stringify(object)
 		}catch(err){
-			// logger.error('bmsUtils|simpleStringify|'+err);
-			return err.message;
+			logger.debug(null,'bmsUtils|jsonToText|'+err)
+			return util.inspect(object, {showHidden: false, depth: null})
 		}
 	},
 
@@ -40,29 +28,29 @@ const utils = {
 				}
 			}
 		// }catch(err){ //undefined.length
-		// 	// logger.error('bmsUtils|idDataFound|'+err);
-		// 	return false;
+		// 	// logger.debug(null,'bmsUtils|idDataFound|'+err)
+		// 	return false
 		// }
 	},
 
 	isDigit: (strDigit) => {
 		try{
-	//(strDigit && cfg.regDigit.test(strDigit)) ? return true : return false;
+	//(strDigit && cfg.regDigit.test(strDigit)) ? return true : return false
 			if(strDigit && cfg.regDigit.test(strDigit)){
-			    return true;
+			    return true
 			}else{
-			    return false;
+			    return false
 			}
 		}catch(err){
-			// logger.error('bmsUtils|isDigit|'+err);
-			return false;
+			logger.debug(null,'bmsUtils|isDigit|'+err)
+			return false
 		}
 	},
 
 	getToken: (data) => {
 		try {
-			let dateObj = new Date();
-			let expire = dateObj.setMinutes(dateObj.getMinutes() + cfg.expires);
+			let dateObj = new Date()
+			let expire = dateObj.setMinutes(dateObj.getMinutes() + cfg.expires)
 		    let userTokenId = jwt.encode({
 		      // userId: data._id,
 		      userName: data.userName,
@@ -70,44 +58,54 @@ const utils = {
 		      // password: data.password,
 		      // userGroupId: data.userGroupId,
 		      exp: expire
-		    }, shhh());
-		    return userTokenId;
+		    }, shhh())
+		    return userTokenId
 		}catch(err){
-			// logger.note('bmsUtils|getToken|'+err);
-			return err.message;
+			logger.debug(null,'bmsUtils|getToken|'+err)
+			return err.message
 		}
 
 	},
 
 	getUserName: (token) => {
 		try {
-			const decoded = jwt.decode(token, shhh());
-		    return decoded.userName;
+			const decoded = jwt.decode(token, shhh())
+		    return decoded.userName
 		}catch(err){
-			// logger.note('bmsUtils|getUserName|'+err);
-			return err.message;
+			logger.debug(null,'bmsUtils|getUserName|'+err)
+			return err.message
+		}
+	},
+
+	getUserType: (token) => {
+		try {
+			const decoded = jwt.decode(token, shhh())
+		    return decoded.userType
+		}catch(err){
+			logger.debug(null,'bmsUtils|getUserName|'+err)
+			return err.message
 		}
 	},
 
 	getExpireTime: (token) => {
 		try {
-			const decoded = jwt.decode(token, shhh());
-		    return decoded.exp;
+			const decoded = jwt.decode(token, shhh())
+		    return decoded.exp
 		}catch(err){
-			// logger.error('bmsUtils|getExpireTime|'+err);
-			return err.message;
+			logger.debug(null,'bmsUtils|getExpireTime|'+err)
+			return err.message
 		}
 	},
 
 	extractToken: (token) => {
 		try {
-		    return jwt.decode(token, shhh());
+		    return jwt.decode(token, shhh())
 		}catch(err){
-			// logger.error('bmsUtils|extractToken|'+err);
-			return err.message;
+			logger.debug(null,'bmsUtils|extractToken|'+err)
+			return err.message
 		}
 	}
 }
 
 
-module.exports = utils;
+module.exports = utils

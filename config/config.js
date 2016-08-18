@@ -67,11 +67,6 @@ config.om.options = {wsdl_options:{
     password: "OM@stg!#2014",
     domain: "corp-ais900dev"
 }}
-config.om.bypass = false //true for test before connect single signon
-config.om.managerEmail = 'kittilau@corp.ais900dev.org' //use when om.bypass=true
-config.om.managerUser = 'kittilau' //use when om.bypass=true
-config.om.email = 'siripoko@corp.ais900dev.org' //use when om.bypass=true
-config.om.user = 'siripoko' //use when om.bypass=true
 
 // Email Notification to DM
 config.email = {}

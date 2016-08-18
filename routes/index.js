@@ -9,7 +9,8 @@ const contract = require('./contract.js');
 const vendorProfile = require('./vendorProfile.js');
 const userRequest = require('./userRequest.js');
 const notification = require('./notification.js')
-const userManagement = require('./userManagement.js')
+const userManagement = require('./userManagement.js');
+const Insurance = require('./Insurance.js');
 
 // ============================================================================
 // Login
@@ -69,5 +70,13 @@ router.post('/userManagement', userManagement.add);
 router.post('/getuserManagement', userManagement.queryByCriteria);
 router.put('/userManagement', userManagement.edit);
 router.delete('/userManagement/:userName', userManagement.delete);
+
+// ============================================================================
+// Insurance of location
+// ============================================================================
+router.post('/Insurance', Insurance.add);
+//router.post('/Insurance', Insurance.queryByCriteria);
+//router.put('/Insurance', Insurance.edit);
+//router.delete('/Insurance/:insuranceNo', Insurance.delete);
 
 module.exports = router;

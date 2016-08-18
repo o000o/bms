@@ -9,7 +9,7 @@ const mUrWf = mCfg.sequelize.define('ur_workflow', {
 	urStatus: {type: Sequelize.STRING, field: 'ur_status', allowNull: false},
 	updateBy: {type: Sequelize.STRING, field: 'update_by', allowNull: false},
 	updateTime: {type: Sequelize.DATEONLY, field: 'update_time', allowNull: false, 
-		defaultValue: Sequelize.NOW, get: function()  {return mCfg.correctTime(this.getDataValue('updateTime'));}
+		defaultValue: Sequelize.NOW//, get: function()  {return mCfg.correctTime(this.getDataValue('updateTime'));}
 	},
 	remark: {type: Sequelize.STRING, allowNull: true}
 },{freezeTableName: true, timestamps: false});

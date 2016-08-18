@@ -18,7 +18,9 @@ const mVendorProfileContact = mCfg.sequelize.define('vendor_profile_contact', {
 	landline: { type: Sequelize.STRING, allowNull: false},
 	mobileNo: { type: Sequelize.STRING, field: 'mobile_no', allowNull: true},
 	fax: { type: Sequelize.STRING, allowNull: true},
-	email: { type: Sequelize.STRING, allowNull: false}
+	email: { type: Sequelize.STRING, allowNull: false},
+	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
+        createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
 },{freezeTableName: true, timestamps: false});
 
 module.exports = mVendorProfileContact;

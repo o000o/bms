@@ -1,12 +1,10 @@
 'use strict'
 
 const express     = require('express')
-// const cheerio     = require('cheerio')
 const interceptor = require('express-interceptor')
-const jwt = require('jwt-simple')
+// const cheerio     = require('cheerio')
 const logger = require('../utils/logUtils')
 const util = require('../utils/bmsUtils')
-const jsUtil = require('util')
 const cfg = require('../config/config')
 
 module.exports = interceptor((req, res) => {
@@ -32,7 +30,7 @@ module.exports = interceptor((req, res) => {
         let newBody = JSON.parse(body)
         if (cfg.interceptRespCode.indexOf(newBody.responseStatus.responseCode)>=0) {
             const decoded = util.extractToken(req.header('x-userTokenId'))
-            logger.debug(req,'interceptor|Token Decoded:'+jsUtil.inspect(decoded, {showHidden: false, depth: null}))
+            logger.debug(req,'interceptor|Token Decoded:'+util.jsonToText(decoded))
             let dateObj = new Date()
             let expire = dateObj.setMinutes(dateObj.getMinutes() + cfg.renewTokenTime)
             logger.debug(req,'interceptor|Token Expire:'+(decoded.exp <= expire))
@@ -46,6 +44,7 @@ module.exports = interceptor((req, res) => {
       
       afterSend:(oldBody, newBody) => {
         // console.log('***afterSend***')
+        logger.debug(req,'interceptor|afterSend|newBody:'+newBody+'|oldBody:'+oldBody)
       }
     }
   } catch (err) { //never get in here

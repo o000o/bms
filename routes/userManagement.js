@@ -25,12 +25,12 @@ const userManagement = {
                 } else { //vendor existed
                     logger.info(req, cmd + '|Error:' + error.desc_01004)
                     logger.summary(req, cmd + '|Error:' + error.desc_01004)
-                    res.json(resp.getJsonError(error.code_01004, error.desc_01004, db))
+                    return res.json(resp.getJsonError(error.code_01004, error.desc_01004, db))
                 }
             }).catch((err) => {
                 logger.error(req, cmd + '|Data:' + JSON.stringify(req.body.requestData) + '|Error:' + err)
                 logger.summary(req, cmd + '|' + error.desc_01001)
-                res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
+                return res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
             })
         } catch (err) {
             logger.error(req, cmd + '|' + err)
@@ -45,8 +45,8 @@ const userManagement = {
             if (!util.isDataFound(req.body.requestData.userName)) {
               let err = 'userName can not null'
               logger.error(req, cmd + '|Error:' + err)
-              logger.summary(req, cmd + '|' + error.desc_01002)
-              res.json(resp.getJsonError(error.code_01002, error.desc_01002, err))
+              logger.summary(req, cmd + '|' + error.code_00005)
+              return res.json(resp.getJsonError(error.code_00005, error.desc_00005, err))
             }
 
             mUser.update(requestData, {
@@ -59,7 +59,7 @@ const userManagement = {
             }).catch((err) => {
                 logger.error(req, 'UpdateUserManagement|Data:' + JSON.stringify(requestData) + '|Error:' + err)
                 logger.summary(req,cmd+'|'+error.desc_01001)
-                res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+                return res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
             })
         } catch (err) {
             logger.error(req, cmd + '|' + err)
@@ -75,12 +75,18 @@ const userManagement = {
                     userName: req.params.userName
                 }
             }).then((succeed) => {
+              if (succeed > 0) {
                 logger.info(req, cmd + '|Data:\"userName\": \"' + req.params.userName + '\"|Deleted ' + succeed + ' records')
                 return resp.getSuccess(req, res, cmd)
+              } else {
+                let err = 'Not Found userName ' + req.params.userName
+                logger.summary(req, cmd + '|Data:\"userName\": \"' + req.params.userName + '\"|' + err)
+                return res.json(resp.getJsonError(error.code_01003, error.desc_01003, err))
+              }
             }).catch((err) => {
                 logger.error(req, cmd + '|Data:\"userName\": \"' + req.params.userName + '\"|Error:' + err)
                 logger.summary(req, cmd + '|' + error.desc_01001)
-                res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
+                return res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
             })
         } catch (err) {
             logger.error(req, cmd + '|' + err)
@@ -133,12 +139,12 @@ const userManagement = {
                     })
                 } else {
                     logger.summary(req, cmd + '|Not Found userManagementList')
-                    res.json(resp.getJsonError(error.code_01003, error.desc_01003, db))
+                    return res.json(resp.getJsonError(error.code_01003, error.desc_01003, db))
                 }
             }).catch((err) => {
                 logger.error(req, cmd + '|Error:' + err)
                 logger.summary(req, cmd + '|' + error.desc_01002)
-                res.json(resp.getJsonError(error.code_01002, error.desc_01002, err))
+                return res.json(resp.getJsonError(error.code_01002, error.desc_01002, err))
             })
 
         } catch (err) {

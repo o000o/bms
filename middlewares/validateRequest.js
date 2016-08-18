@@ -1,7 +1,5 @@
 'use strict'
 
-const jwt = require('jwt-simple')
-// const chalk = require('chalk')
 const Sequelize = require('sequelize')
 const mUser = require('../models/mUser')
 const resp = require('../utils/respUtils')
@@ -31,11 +29,10 @@ module.exports = (req, res, next) => {
     }
     cmd = 'chkToken'
     let token = req.header('x-userTokenId')
-    // console.log('Token : '+chalk.blue(token))
     logger.info(req,cmd+'|Token:'+token)
     if (token) {
       flagT = 1
-      const decoded = jwt.decode(token, require('../config/secret.js')())
+      const decoded = util.extractToken(token)
       cmd = 'checkExpire'
       logger.info(req,cmd+'|ExpireTime:'+decoded.exp+'|NOW:'+Date.now())
       if (decoded.exp <= Date.now()) {

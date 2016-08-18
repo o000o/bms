@@ -32,15 +32,15 @@ app.use(cors(corsPolicy))
 
 app.use((req, res, next) => { //Incoming
   let uName = req.header('x-userTokenId') ? ('_'+util.getUserName(req.header('x-userTokenId'))) : ''
-  if((uName=='') && util.isDataFound(req.body.requestData.userName)) uName = '_'+req.body.requestData.userName
+  if((uName=='')&&(req.body)&&(req.body.requestData)&&(req.body.requestData.userName)) uName = '_'+req.body.requestData.userName
   req.ssid = moment(new Date()).tz('Asia/Bangkok').format('YYYYMMDDHHmmss') + uName
   logger.incoming(req)
   next()
 })
 
-app.use((err, req, res, next) =>{ //Incoming and error
+app.use((err, req, res, next) =>{ //Incoming and then Error
   let uName = req.header('x-userTokenId') ? ('_'+util.getUserName(req.header('x-userTokenId'))) : ''
-  if((uName=='') && util.isDataFound(req.body.requestData.userName)) uName = '_'+req.body.requestData.userName
+  if((uName=='')&&(req.body)&&(req.body.requestData)&&(req.body.requestData.userName)) uName = '_'+req.body.requestData.userName
   req.ssid = moment(new Date()).tz('Asia/Bangkok').format('YYYYMMDDHHmmss') + uName
   logger.incoming(req,err)
   if (err instanceof SyntaxError) {
@@ -55,7 +55,7 @@ app.post('/bms/login/user', auth.login)
 // Only the requests that start with /api/v1/* will be checked for the token.
 // Any URL's that do not follow the below pattern should be avoided unless you
 // are sure that authentication is not needed
-app.all('/bms/*', [require('./middlewares/validateRequest')])
+// app.all('/bms/*', [require('./middlewares/validateRequest')])
 // Add the interceptor middleware for renew token
 app.use('/bms/*', [require('./middlewares/interceptResponse')])
 app.use('/bms/', require('./routes'))

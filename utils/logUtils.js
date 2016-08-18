@@ -6,7 +6,7 @@ const logCfg = require('../config/config')
 // const util = require('../utils/bmsUtils')
 const moment = require('moment-timezone')
 
-var exports = module.exports = {}
+// var exports = module.exports = {}
 
 function getDateTimeFormat ()
 {
@@ -94,6 +94,16 @@ function writeLog(namePath,logMessage) //${LogTime}|${hostname}|${appname}|INCOM
         stream.write(logMessage+'\n')
         stream.end()
     })
+}
+
+exports.debug = (reqData, errMsg) =>
+{//${LogTime}|${hostname}|${appname}|INFO|Token|COMMAMD|Data|...
+    if(logCfg.log.debug){
+        let error = ''
+        if(errMsg != null && errMsg != '' && errMsg != 'undefined') error = '|'+errMsg
+        let logMsg = getLogHeader('DEBUG',reqData)+error
+        writeLog(logCfg.log.logPath+'/'+getLogFileName(),logMsg)
+    }
 }
 
 exports.info = (reqData, errMsg) =>

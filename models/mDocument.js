@@ -12,8 +12,8 @@ const mDocument = mCfg.sequelize.define('document', {
 	documentVersion: {type: Sequelize.STRING, field: 'doc_version', allowNull: false},
 	documentType: {type: Sequelize.STRING, field: 'doc_type', allowNull: false},
 	documentStatus: {type: Sequelize.STRING, field: 'doc_status', allowNull: false},
-	uploadDate: {type: Sequelize.DATEONLY, field: 'upload_date', allowNull: false,
-		get: function() {return mCfg.correctTime(this.getDataValue('uploadDate'));}
+	uploadDate: {type: Sequelize.DATEONLY, field: 'upload_date', allowNull: false//,
+		//get: function() {return mCfg.correctTime(this.getDataValue('uploadDate'));}
 	},
 	uploadBy: {type: Sequelize.STRING, field: 'upload_by', allowNull: false},
 	insuranceId: {type: Sequelize.INTEGER, field: 'insurance_id', allowNull: true}
