@@ -11,7 +11,8 @@ const mUrWf = mCfg.sequelize.define('ur_workflow', {
 	updateTime: {type: Sequelize.DATEONLY, field: 'update_time', allowNull: false, 
 		defaultValue: Sequelize.NOW//, get: function()  {return mCfg.correctTime(this.getDataValue('updateTime'));}
 	},
-	remark: {type: Sequelize.STRING, allowNull: true}
+	remark: {type: Sequelize.STRING, allowNull: true},
+	department: {type: Sequelize.STRING, allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
 module.exports = mUrWf;

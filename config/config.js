@@ -56,6 +56,9 @@ config.regDigit = /^[0-9]+$/
 // Response Json
 config.devMsg = true //Response devMsg when error
 
+// Department for workflow
+config.adminDepartment = 'Admin Department'
+
 // OM
 config.om = {}
 config.om.timeout = 10000 //10 Sec
@@ -70,7 +73,13 @@ config.om.options = {wsdl_options:{
 
 // Email Notification to DM
 config.email = {}
-config.email.notify = false
+config.email.notify = true
+config.email.subject = {}
+config.email.subject.wManagerApprove = 'BMS :: User-Request ที่รอการอนุมัติ' //user create request email manager
+config.email.subject.managerReject = 'BMS :: User-Request ที่ไม่ผ่านการอนุมัติ' //manager reject request email user
+config.email.subject.wAdminApprove = 'BMS :: User-Request ที่ผ่านการอนุมัติ รอดำเนินการต่อ' //manager approved email admin
+config.email.subject.adminReject = 'BMS :: User-Request ที่ไม่ผ่านการอนุมัติ' //admin reject email user & manager
+config.email.subject.urComplete = 'BMS :: User-Request ที่ดำเนินการสำเร็จแล้ว' //admin completed UR email user & manager
 config.email.transporter = nodemailer.createTransport({
     host: '10.252.160.41',
     port : 25,
@@ -78,7 +87,7 @@ config.email.transporter = nodemailer.createTransport({
 })
 config.email.options = {
     from: 'bms_dev@corp.ais900dev.org', // sender address
-    // to: 'kittilau@corp.ais900dev.org', // list of receivers
-    subject: 'BMS :: User-Request ที่ยังไม่ได้รับการดำเนินการ', // Subject line
+    to: 'kittilau@corp.ais900dev.org', // uncomment when want to send to test email
+    // subject: 'BMS :: User-Request ที่ยังไม่ได้รับการดำเนินการ' // Subject line
     html: fs.createReadStream('./config/content.html') // html body
 }

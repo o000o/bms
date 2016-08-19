@@ -2,18 +2,22 @@
 const chalk = require('chalk')
 const util = require('./utils/bmsUtils')
 const jwt = require('jwt-simple')
+const cfg = require('./config/config')
 
         try{
-        let newBody = {}
-            // const decoded = jwt.decode(
-            //       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyTmFtZSI6InNpcmlwb2tvIiwidXNlclR5cGUiOiJVU0VSIiwiZXhwIjoxNDcwODA4MDQxMjM0fQ.7jPL4ltbA_da66GlYUDswqFJQKJz1uihys5ssGz3ds',
-            //        require('./config/secret.js')())
-            const decoded = util.extractToken(
-                  'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyTmFtZSI6InNpcmlwb2tvIiwidXNlclR5cGUiOiJVU0VSIiwiZXhwIjoxNDcwODA4MDQxMjM0fQ.7jPL4ltbA_da66GlYUDswqFJQKJz1uihys5ssGz3ds'
-                   )
+console.log(chalk.green(util.jsonToText(cfg.email.options.html)))
 
-              newBody.responseStatus.userTokenId=util.getToken(decoded)
-              console.log(chalk.green('interceptor|New Token:'+newBody.responseStatus.userTokenId))
+
+        // let newBody = {}
+        //     // const decoded = jwt.decode(
+        //     //       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyTmFtZSI6InNpcmlwb2tvIiwidXNlclR5cGUiOiJVU0VSIiwiZXhwIjoxNDcwODA4MDQxMjM0fQ.7jPL4ltbA_da66GlYUDswqFJQKJz1uihys5ssGz3ds',
+        //     //        require('./config/secret.js')())
+        //     const decoded = util.extractToken(
+        //           'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyTmFtZSI6InNpcmlwb2tvIiwidXNlclR5cGUiOiJVU0VSIiwiZXhwIjoxNDcwODA4MDQxMjM0fQ.7jPL4ltbA_da66GlYUDswqFJQKJz1uihys5ssGz3ds'
+        //            )
+
+        //       newBody.responseStatus.userTokenId=util.getToken(decoded)
+        //       console.log(chalk.green('interceptor|New Token:'+newBody.responseStatus.userTokenId))
             
 
 

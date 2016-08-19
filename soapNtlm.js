@@ -12,7 +12,7 @@ var options = {
     }
 };
 
-var args = {OmCode: 'OMTESTBMS',Username: 'sodsaila'}
+var args = {OmCode: 'OMTESTBMS',Username: 'watchame'}
 // var args ={"OmCode":"OMTESTBMS","Username":"Signature verification failed"}
 soap.createClient(__dirname + '/config/om.wsdl', options, (err, client, body)=>{
     if (err) {

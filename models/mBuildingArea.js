@@ -13,7 +13,7 @@ const mBuildingArea = mCfg.sequelize.define('building_area', {
 	// menToiletAmount: { type: Sequelize.INTEGER, field: 'MEN_TOILET_AMOUNT', allowNull: true},
 	// womenToiletAmount: { type: Sequelize.INTEGER, field: 'WOMEN_TOILET_AMOUNT', allowNull: true},
 	areaSize: {type: Sequelize.INTEGER, field: 'area_size', allowNull: false},
-	areaSizeUsed: {type: Sequelize.INTEGER, field: 'area_size_use', allowNull: true},
+	availableSpace: {type: Sequelize.INTEGER, field: 'available_space', allowNull: true},
 	unitArea: {type: Sequelize.STRING, field: 'unit_area', allowNull: false},
 	// employeeTotal: { type: Sequelize.INTEGER, field: 'EMPLOYEE_AMOUNT', allowNull: true},
 	rentalObjective: {type: Sequelize.STRING, field: 'rental_obj', allowNull: true},

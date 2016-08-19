@@ -38,3 +38,9 @@ error.code_03001 = '03001'
 error.desc_03001 = 'OM error.'
 error.code_03002 = '03002'
 error.desc_03002 = 'OM data not found.'
+
+// Error Code Email
+error.code_04000 = '04000'
+error.desc_04000 = 'Email Sent.'
+error.code_04001 = '04001'
+error.desc_04001 = 'Send Email Unsuccess.'

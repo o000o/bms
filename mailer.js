@@ -1,5 +1,6 @@
 var nodemailer = require('nodemailer');
 var fs = require('fs');
+var replaceStream = require('replacestream')
 
 var transporter = nodemailer.createTransport({
     host: '10.252.160.41',
@@ -10,6 +11,7 @@ var transporter = nodemailer.createTransport({
 // setup e-mail data with unicode symbols
 
 var htmlstream = fs.createReadStream('./config/content.html');
+htmlstream = htmlstream.pipe(replaceStream('{$urId}','ooo')).pipe(process.stdout)
 var mailOptions = {
     from: 'bms_dev@corp.ais900dev.org', // sender address
     to: 'kittilau@corp.ais900dev.org', // list of receivers

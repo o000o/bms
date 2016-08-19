@@ -99,7 +99,6 @@ const userRequest = {
         //call OM => save User & UR & Workflow => async.waterfall??
         if(userRight){
           cmd = 'callOM'
-          let uData = {}
           ext.callOm(req,(err,result)=>{
             if(err){
               // logger.error(req,cmd+'|'+util.inspect(err))
@@ -115,7 +114,7 @@ const userRequest = {
 
               //Update Maneger data in table user don't care success or not just write log
               // cmd = 'updateUserManagement'
-              logger.info(req,cmd+'|Update User:'+util.jsonToText(upUser))
+              logger.info(req,'prepareManagerData|'+util.jsonToText(upUser))
               // mUser.upsert({userName:dmUser, userType:'MANAGER', email:dmEmail, createBy:'system'})
               mUser.update(upUser,{where:{userName:upUser.userName}}).then((succeed) => {
                 logger.info(req,'updateUserManagement|Updated '+ succeed +' records')
@@ -132,128 +131,32 @@ const userRequest = {
 
               //Add UR & Workflow for real!!!
               cmd = 'prepareWorkflowData'
-              req.body.requestData.urWorkflowList={urStatus:req.body.requestData.urStatus,updateBy:upUser.userName}
+              req.body.requestData.urWorkflowList={urStatus:req.body.requestData.urStatus,
+                updateBy:result.managerUser,department:result.department}
               logger.info(req,cmd+'|'+util.jsonToText(req.body.requestData.urWorkflowList))
+              cmd = 'addUserEmail_Department'
+              req.body.requestData.userDepartment = result.department
+              req.body.requestData.userEmail = result.email
+              req.body.requestData.userName = result.name
+              req.body.requestData.userSurname = result.surname
               cmd = 'createUR_Workflow'
               mUR.create(req.body.requestData,{include:[{model: mUrWf, as:cst.models.urWorkflows}]})
               .then((succeed) => {
+                logger.info(req,cmd+'|'+util.jsonToText(succeed))
                 logger.info(req,'notifyEmail|'+cfg.email.notify)
                 if(cfg.email.notify){ //Send Email?
-                  cfg.email.options.to = upUser.email
-                  cfg.email.options.to = 'kittilau@corp.ais900dev.org' //test email
-                  /****
-                  URL: https://10.252.160.41/owa
-                  user: kittilau
-                  pass: Ais@09Jun
-                  *****/
-                  // send mail with defined transport object
-                  cfg.email.transporter.sendMail(cfg.email.options,(error, info)=>{
-                    if(error) logger.info(req,'notifyEmail|Failed|'+error)
-                    logger.info(req,'notifyEmail|Sent:'+info.response)
+                  ext.sendEmail(result.managerEmail,succeed,(result)=>{
+                    logger.info(req,'notifyEmail|'+util.jsonToText(result))
                   })
                 }
-                logger.info(req,cmd+'|'+util.jsonToText(succeed))
                 return resp.getSuccess(req,res,cmd,succeed)
               }).catch((err) => {
                 logger.error(req,cmd+'|'+err)
                 logger.summary(req,cmd+'|'+error.desc_01001)
                 res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
               })
-
-                  // logger.error(req,cmd+'|'+err.msg)
-                  // logger.summary(req,cmd+'|'+err.desc)
-                  // res.json(resp.getJsonError(err.code,err.desc,err.msg))
-          // cmd = 'updateUserManagement'
-          // cmd = 'addWorkflowData'  
           })
         }
-
-//         if(req.body.requestData.urType!='EDITCONTRACT'){
-//   //*********query at DM then add UR then add Workflow if not EDITCONTRACT
-//           let uData = {}
-//           cmd = 'callOM'
-//           ext.callOm(req,(err,result)=>{
-//             uData.user = result.user
-//             uData.email = result.email
-//             uData.managerUser = result.managerUser
-//             uData.managerEmail = result.managerEmail
-// // return resp.getSuccess(req,res,cmd,err)
-
-//                   // logger.error(req,cmd+'|'+err.msg)
-//                   // logger.summary(req,cmd+'|'+err.desc)
-//                   // res.json(resp.getJsonError(err.code,err.desc,err.msg))
-//           // cmd = 'updateUserManagement'
-//           // cmd = 'addWorkflowData'  
-//           })
-   
-
-
-
-
-          
-
-//                         // logger.info(req,cmd+'|dmUser:'+dmUser+'|dmEmail:'+dmEmail)
-//                         // // cmd = 'updateUserManagement'
-//                         // // mUser.upsert({userName:dmUser, userType:'DM', createBy:'system'})
-//                         // mUser.upsert({userName:dmUser, userType:'MANAGER', email:dmEmail})
-//                         // .then((succeed) => {
-//                         //   if(succeed) logger.info(req,'updateUserManagement|Inserted')
-//                         //   else logger.info(req,'updateUserManagement|Updated')
-//                         // }).catch((err) => {
-//                         //   // logger.info(req,'updateUserManagement|failed')
-//                         //   logger.error(req,'updateUserManagement|Failed|'+err)
-//                         // })
-
-//                         // cmd = 'addWorkflowData'
-//                         // req.body.requestData.urWorkflowList={urStatus:req.body.requestData.urStatus,updateBy:dmUser}
-//                         // logger.info(req,cmd+'|'+util.jsonToText(req.body.requestData.urWorkflowList))
-//                         // cmd = 'createUR&Workflow'
-//                         // mUR.create(req.body.requestData, {include: [{model: mUrWf, as:cst.models.urWorkflows}]})
-//                         // .then((succeed) => {
-//                         //   //Send Email here!!!!
-//                         //   logger.info(req,'notifyEmail|'+cfg.email.notify)
-//                         //   if(cfg.email.notify){
-//                         //     cfg.email.options.to = dmEmail
-//                         //     // cfg.email.options.to = 'kittilau@corp.ais900dev.org'
-//                         //     /****
-//                         //     URL: https://10.252.160.41/owa
-//                         //     user: kittilau
-//                         //     pass: Ais@09Jun
-//                         //     *****/
-//                         //     // send mail with defined transport object
-//                         //     cfg.email.transporter.sendMail(cfg.email.options, (error, info)=>{
-//                         //       if(error){
-//                         //         logger.info(req,'notifyEmail|failed')
-//                         //         logger.error(req,'notifyEmail|'+error)
-//                         //       }
-//                         //       logger.info(req,'notifyEmail|Sent:'+info.response)
-//                         //     })
-//                         //   }
-//                         //   logger.info(req,cmd+'|'+util.jsonToText(succeed))
-//                         //   return resp.getSuccess(req,res,cmd,succeed)
-//                         // }).catch((err) => {
-//                         //   logger.error(req,cmd+'|'+err)
-//                         //   logger.summary(req,cmd+'|'+error.desc_01001)
-//                         //   res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-//                         // })
-
-//         }else{ //EDITCONTRACT don't add workflow
-//           cmd = 'createEditContractUR'
-//           if(util.isDataFound(req.body.requestData.contractId)){
-//             mUR.create(req.body.requestData).then((succeed) => {
-//               logger.info(req,cmd+'|'+util.jsonToText(succeed))
-//               return resp.getSuccess(req,res,cmd,succeed)
-//             }).catch((err) =>{
-//               logger.error(req,cmd+'|'+err)
-//               logger.summary(req,cmd+'|'+error.desc_01001)
-//               res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-//             })
-//           }else{
-//             let err ='No contractId not add editContract UR'
-//             logger.info(req,cmd+'|'+err)
-//             return resp.getIncompleteParameter(req,res,cmd,err)
-//           }
-//         }
       }else{
         let err ='No urType or urStatus'
         logger.info(req,cmd+'|'+err)
@@ -273,9 +176,13 @@ const userRequest = {
       delete req.body.requestData.urId
       cmd = 'updateUR'
       logger.info(req,cmd+'|where:'+util.jsonToText(jWhere)+'|set:'+util.jsonToText(req.body.requestData))
-      mUR.update(req.body.requestData, { where: jWhere }).then((succeed) => {
+      mUR.update(req.body.requestData,{where:jWhere}).then((succeed) => {
         logger.info(req,cmd+'|updated '+ succeed +' records')
-        return resp.getSuccess(req,res,cmd)
+        if(succeed>0) return resp.getSuccess(req,res,cmd)
+        else{
+          logger.summary(req,cmd+'|'+error.desc_01001)
+          res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+        }
       }).catch((err) => {
         logger.error(req,cmd+'|Error while update UR|'+err)
         logger.summary(req,cmd+'|'+error.desc_01001)
