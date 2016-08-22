@@ -37,7 +37,7 @@ constant.userType.accountant = 'ACCOUNTANT'
 constant.userType.system = 'SYSTEM'
 
 constant.userGroup = {}
-constant.userGroup.admin = [constant.userType.managerAdmin,constant.userType.centerAdmin]
+constant.userGroup.admin = [constant.userType.centerAdmin]
 constant.userGroup.manager = [constant.userType.manager,constant.userType.managerAdmin]
 constant.userGroup.user = [constant.userType.user]
 
