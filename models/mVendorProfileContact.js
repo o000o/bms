@@ -1,6 +1,6 @@
 'use strict'
-const Sequelize = require('sequelize');
-const mCfg = require('../config/modelCfg');
+const Sequelize = require('sequelize')
+const mCfg = require('../config/modelCfg')
 
 const mVendorProfileContact = mCfg.sequelize.define('vendor_profile_contact', {
 	vendorContactId: { type: Sequelize.INTEGER, field: 'vendor_contact_id', primaryKey: true, autoIncrement: true, allowNull: false},
@@ -21,6 +21,6 @@ const mVendorProfileContact = mCfg.sequelize.define('vendor_profile_contact', {
 	email: { type: Sequelize.STRING, allowNull: false},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
         createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
-},{freezeTableName: true, timestamps: false});
+},{freezeTableName: true, timestamps: false})
 
-module.exports = mVendorProfileContact;
+module.exports = mVendorProfileContact

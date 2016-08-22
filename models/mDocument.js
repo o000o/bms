@@ -1,7 +1,7 @@
 'use strict'
 
-const Sequelize = require('sequelize');
-const mCfg = require('../config/modelCfg');
+const Sequelize = require('sequelize')
+const mCfg = require('../config/modelCfg')
 
 const mDocument = mCfg.sequelize.define('document', {
 	documentId: {type: Sequelize.INTEGER, field: 'doc_id', primaryKey: true, allowNull: false, autoIncrement: true},
@@ -13,10 +13,10 @@ const mDocument = mCfg.sequelize.define('document', {
 	documentType: {type: Sequelize.STRING, field: 'doc_type', allowNull: false},
 	documentStatus: {type: Sequelize.STRING, field: 'doc_status', allowNull: false},
 	uploadDate: {type: Sequelize.DATEONLY, field: 'upload_date', allowNull: false//,
-		//get: function() {return mCfg.correctTime(this.getDataValue('uploadDate'));}
+		//get: function() {return mCfg.correctTime(this.getDataValue('uploadDate'))}
 	},
 	uploadBy: {type: Sequelize.STRING, field: 'upload_by', allowNull: false},
 	insuranceId: {type: Sequelize.INTEGER, field: 'insurance_id', allowNull: true}
-},{freezeTableName: true, timestamps: false});
+},{freezeTableName: true, timestamps: false})
 
-module.exports = mDocument;
+module.exports = mDocument

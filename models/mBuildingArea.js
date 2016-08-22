@@ -1,6 +1,6 @@
 'use strict'
-const Sequelize = require('sequelize');
-const mCfg = require('../config/modelCfg');
+const Sequelize = require('sequelize')
+const mCfg = require('../config/modelCfg')
 
 const mBuildingArea = mCfg.sequelize.define('building_area', {
 	buildingAreaId: {type: Sequelize.INTEGER, field: 'ba_id', primaryKey: true, autoIncrement: true, allowNull: false},
@@ -19,6 +19,6 @@ const mBuildingArea = mCfg.sequelize.define('building_area', {
 	rentalObjective: {type: Sequelize.STRING, field: 'rental_obj', allowNull: true},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
         createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
-},{freezeTableName: true, timestamps: false});
+},{freezeTableName: true, timestamps: false})
 
-module.exports = mBuildingArea;
+module.exports = mBuildingArea

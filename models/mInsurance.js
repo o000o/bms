@@ -1,7 +1,7 @@
 'use strict'
 
-const Sequelize = require('sequelize');
-const mCfg = require('../config/modelCfg');
+const Sequelize = require('sequelize')
+const mCfg = require('../config/modelCfg')
 
 const mInsurance = mCfg.sequelize.define('insurance', {
 	insuranceId: {type: Sequelize.INTEGER, field: 'insurance_id', primaryKey: true, allowNull: false, autoIncrement: true},
@@ -10,13 +10,13 @@ const mInsurance = mCfg.sequelize.define('insurance', {
 	insuranceNo: {type: Sequelize.STRING, field: 'insurance_no', allowNull: false},
 	insuranceDetail: {type: Sequelize.STRING, field: 'insurance_detail', allowNull: false},
 	insuranceDate: {type: Sequelize.DATEONLY, field: 'insurance_date', allowNull: false//,
-		//get: function() {return mCfg.correctTime(this.getDataValue('insuranceDate'));}
+		//get: function() {return mCfg.correctTime(this.getDataValue('insuranceDate'))}
 	},
 	insuranceStart: {type: Sequelize.DATEONLY, field: 'insurance_start', allowNull: false//,
-		//get: function() {return mCfg.correctTime(this.getDataValue('insuranceStart'));}
+		//get: function() {return mCfg.correctTime(this.getDataValue('insuranceStart'))}
 	},
 	insuranceEnd: {type: Sequelize.DATEONLY, field: 'insurance_end', allowNull: false//,
-		//get: function() {return mCfg.correctTime(this.getDataValue('insuranceEnd'));}
+		//get: function() {return mCfg.correctTime(this.getDataValue('insuranceEnd'))}
 	},
 	insurer: {type: Sequelize.STRING, allowNull: false},
 	insured: {type: Sequelize.STRING, allowNull: false},
@@ -25,6 +25,6 @@ const mInsurance = mCfg.sequelize.define('insurance', {
 	premium: {type: Sequelize.REAL, field: 'premium', allowNull: false},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
         createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
-},{freezeTableName: true, timestamps: false});
+},{freezeTableName: true, timestamps: false})
 
-module.exports = mInsurance;
+module.exports = mInsurance

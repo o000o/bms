@@ -1,8 +1,8 @@
 'use strict'
-const Sequelize = require('sequelize');
-const mCfg = require('../config/modelCfg');
-const cst = require('../config/constant');
-const mVendorContact = require('./mVendorProfileContact');
+const Sequelize = require('sequelize')
+const mCfg = require('../config/modelCfg')
+const cst = require('../config/constant')
+const mVendorContact = require('./mVendorProfileContact')
 
 const mVendorProfile = mCfg.sequelize.define('vendor_profile', {
 	vendorId: { type: Sequelize.INTEGER, field: 'vendor_id', primaryKey: true, autoIncrement: true, allowNull: false},
@@ -26,8 +26,8 @@ const mVendorProfile = mCfg.sequelize.define('vendor_profile', {
 	vendorCode: { type: Sequelize.STRING, field: 'vendor_code', allowNull: true},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
 	createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
-},{freezeTableName: true, timestamps: false});
+},{freezeTableName: true, timestamps: false})
 
-mVendorProfile.hasMany(mVendorContact, {as:cst.models.vendorContacts, foreignKey:'vendorId', targetKey:'vendorId'});
+mVendorProfile.hasMany(mVendorContact, {as:cst.models.vendorContacts, foreignKey:'vendorId', targetKey:'vendorId'})
 
-module.exports = mVendorProfile;
+module.exports = mVendorProfile

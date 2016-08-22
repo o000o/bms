@@ -1,7 +1,7 @@
 'use strict'
 
-const Sequelize = require('sequelize');
-const mCfg = require('../config/modelCfg');
+const Sequelize = require('sequelize')
+const mCfg = require('../config/modelCfg')
 
 const mCtPayment = mCfg.sequelize.define('contract_payment', {
 	contractPaymentId: {type: Sequelize.INTEGER, field:'cp_id', primaryKey: true, allowNull: false, autoIncrement: true},

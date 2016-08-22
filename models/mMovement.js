@@ -1,7 +1,7 @@
 'use strict'
 
-const Sequelize = require('sequelize');
-const mCfg = require('../config/modelCfg');
+const Sequelize = require('sequelize')
+const mCfg = require('../config/modelCfg')
 
 const mMovement = mCfg.sequelize.define('location_movement', {
 	movementId: {type: Sequelize.INTEGER, field: 'lm_id', primaryKey: true, allowNull: false, autoIncrement: true},
@@ -13,6 +13,6 @@ const mMovement = mCfg.sequelize.define('location_movement', {
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
 	assignSpace: {type: Sequelize.REAL, field: 'assign_space', allowNull: true},
 	unitArea: {type: Sequelize.STRING, field: 'unit_area', allowNull: true}
-},{freezeTableName: true, timestamps: false});
+},{freezeTableName: true, timestamps: false})
 
-module.exports = mMovement;
+module.exports = mMovement

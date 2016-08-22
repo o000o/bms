@@ -1,9 +1,9 @@
 'use strict'
-const Sequelize = require('sequelize');
-const mCfg = require('../config/modelCfg');
-const cst = require('../config/constant');
-const mBuildingArea = require('./mBuildingArea');
-const mBuildingDetail = require('./mBuildingDetail');
+const Sequelize = require('sequelize')
+const mCfg = require('../config/modelCfg')
+const cst = require('../config/constant')
+const mBuildingArea = require('./mBuildingArea')
+const mBuildingDetail = require('./mBuildingDetail')
 
 const mBuildingLocation = mCfg.sequelize.define('building_location', {
 	buildingId: { type: Sequelize.INTEGER, field: 'building_id', primaryKey: true, autoIncrement: true, allowNull: false},
@@ -19,10 +19,10 @@ const mBuildingLocation = mCfg.sequelize.define('building_location', {
 	location: { type: Sequelize.STRING, allowNull: true},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
         createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
-},{freezeTableName: true, timestamps: false});
+},{freezeTableName: true, timestamps: false})
 
-mBuildingLocation.hasMany(mBuildingArea, {as:cst.models.locationAreas,foreignKey:'buildingId',targetKey:'buildingId'});
-mBuildingArea.hasMany(mBuildingDetail, {as:cst.models.areaDetails,foreignKey:'buildingAreaId',targetKey:'buildingAreaId'});
-mBuildingArea.belongsTo(mBuildingLocation, {as:cst.models.location, foreignKey:'buildingId', targetKey:'buildingId'});
+mBuildingLocation.hasMany(mBuildingArea, {as:cst.models.locationAreas,foreignKey:'buildingId',targetKey:'buildingId'})
+mBuildingArea.hasMany(mBuildingDetail, {as:cst.models.areaDetails,foreignKey:'buildingAreaId',targetKey:'buildingAreaId'})
+mBuildingArea.belongsTo(mBuildingLocation, {as:cst.models.location, foreignKey:'buildingId', targetKey:'buildingId'})
 
-module.exports = mBuildingLocation;
+module.exports = mBuildingLocation
