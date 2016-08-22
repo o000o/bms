@@ -4,8 +4,7 @@ const resp = require('../utils/respUtils')
 const util = require('../utils/bmsUtils')
 const logger = require('../utils/logUtils')
 const error = require('../config/error')
-const con = require('../config/constant')
-// const mContract = require('../models/mContract')
+const cst = require('../config/constant')
 const mUR = require('../models/mUR')
 const mUrWf = require('../models/mUrWorkFlow')
 const cfg = require('../config/config')
@@ -57,19 +56,19 @@ GROUP BY ur.UR_STATUS
       logger.info(req,cmd+'|decoded:'+util.jsonToText(decoded))
 
       let rawQs = []
-      rawQs.push("SELECT '" + con.notification.myUr + "' as \"groupName\", ur_status as status, COUNT(*) as total "
+      rawQs.push("SELECT '" + cst.notification.myUr + "' as \"groupName\", ur_status as status, COUNT(*) as total "
       + "FROM user_request WHERE ur_by='" + decoded.userName + "' GROUP BY ur_status;")
 
-      if(con.userGroup.admin.indexOf(decoded.userType)>=0){
-        rawQs.push("SELECT '" + con.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
+      if(cst.userGroup.admin.indexOf(decoded.userType)>=0){
+        rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
-        + "WHERE ur.UR_ID = urw.UR_ID AND (ur.UR_STATUS='" + con.status.dmApproved + "' OR (urw.UPDATE_BY='" + decoded.userName
-        + "' AND (urw.UR_STATUS='" + con.status.adminAccept + "' or urw.UR_STATUS='" + con.status.complete + "'))) GROUP BY ur.UR_STATUS;")
-      }else if(con.userGroup.manager.indexOf(decoded.userType)>=0){
-        rawQs.push("SELECT '" + con.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
+        + "WHERE ur.UR_ID = urw.UR_ID AND (ur.UR_STATUS='" + cst.status.dmApproved + "' OR (urw.UPDATE_BY='" + decoded.userName
+        + "' AND (urw.UR_STATUS='" + cst.status.adminAccept + "' or urw.UR_STATUS='" + cst.status.complete + "'))) GROUP BY ur.UR_STATUS;")
+      }else if(cst.userGroup.manager.indexOf(decoded.userType)>=0){
+        rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
         + "WHERE ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY='" + decoded.userName 
-        + "' AND urw.UR_STATUS='" + con.status.wDmApproval + "' GROUP BY ur.UR_STATUS;")
+        + "' AND urw.UR_STATUS='" + cst.status.wDmApproval + "' GROUP BY ur.UR_STATUS;")
       }
 
       cmd = 'countUR'
@@ -78,8 +77,8 @@ GROUP BY ur.UR_STATUS
         // 2nd param is the function that each item is passed to
         (rawQ, callback) => {
           // Call an asynchronous function, often a save() to DB
-          mCfg.sequelize.query(rawQ, {type:mCfg.sequelize.QueryTypes.SELECT}
-          ).then((dbs) => {
+          mCfg.sequelize.query(rawQ, {type:mCfg.sequelize.QueryTypes.SELECT})
+          .then((dbs) => {
             logger.info(req,cmd+'|SQL:'+rawQ+'|DBs:'+ util.jsonToText(dbs))
             if(util.isDataFound(dbs)) dbs.forEach((value) => {resData.push(value)})
             callback()
@@ -87,7 +86,6 @@ GROUP BY ur.UR_STATUS
             logger.error(req,cmd+'|Error while count UR|'+err)
             callback()
           })
-              
         },
         // 3rd param is the function to call when everything's done
         (err) => {
@@ -98,7 +96,6 @@ GROUP BY ur.UR_STATUS
           return resp.getSuccess(req,res,cmd,resData)
         }
       )
-
     }catch(err){
       logger.error(req,cmd+'|'+err)
       return resp.getInternalError(req,res,cmd,err)
