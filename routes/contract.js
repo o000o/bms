@@ -162,24 +162,24 @@ const contract = {
 }
 ***************/
   addOld: (req, res) => { //always need vendorProfile to add contract
-    let cmd = 'addContract';
+    let cmd = 'addContract'
     try{
-      cmd = 'chkVendorProfileExisting';
-      let jWhere = {vendorType:req.body.requestData.vendorProfile.vendorType, vendorName1:req.body.requestData.vendorProfile.vendorName1};
-      logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
+      cmd = 'chkVendorProfileExisting'
+      let jWhere = {vendorType:req.body.requestData.vendorProfile.vendorType, vendorName1:req.body.requestData.vendorProfile.vendorName1}
+      logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
       mVendorProfile.findOne({where:jWhere,attributes:['vendorId']}).then((db) => {
-        logger.info(req,cmd+'|'+JSON.stringify(db));
+        logger.info(req,cmd+'|'+JSON.stringify(db))
 
         if(util.isDataFound(db)){ //already have vendor use old data
-          logger.info(req,cmd+'|'+error.desc_01004);
-          req.body.requestData.vendorId = db.vendorId; //link old vendor with contract
-          delete req.body.requestData.vendorProfile; //delete new vendor data
+          logger.info(req,cmd+'|'+error.desc_01004)
+          req.body.requestData.vendorId = db.vendorId //link old vendor with contract
+          delete req.body.requestData.vendorProfile //delete new vendor data
         }
-        let cloneLocation = JSON.parse(JSON.stringify(req.body.requestData.buildingLocation));
-        delete req.body.requestData.buildingLocation; //delete Location
-        cmd = 'insertContractList';
-        jWhere = {contractNo:req.body.requestData.contractNo, contractDate:req.body.requestData.contractDate};
-        logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
+        let cloneLocation = JSON.parse(JSON.stringify(req.body.requestData.buildingLocation))
+        delete req.body.requestData.buildingLocation //delete Location
+        cmd = 'insertContractList'
+        jWhere = {contractNo:req.body.requestData.contractNo, contractDate:req.body.requestData.contractDate}
+        logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
         mContract.findOrCreate({where:jWhere, defaults:req.body.requestData, include:[
           {model: mVendorProfile, as:cst.models.vendorProfile,
             include:{model:mVendorContact, as:cst.models.vendorContacts}},
@@ -191,7 +191,7 @@ const contract = {
           logger.info(req,cmd+'|Inserted:'+succeed+'|'+JSON.stringify(db))
           if(succeed){ //contract inserted
             //check and add location here!!!
-            cmd = 'insertLocation';
+            cmd = 'insertLocation'
             let cloneDb = JSON.parse(JSON.stringify(db))
             //add contractId to areaList
             cloneLocation.buildingAreaList.forEach((value) => {value.contractId=db.contractId})
@@ -201,15 +201,15 @@ const contract = {
             mLocation.findOrCreate({where:jWhere, defaults:cloneLocation,
               include:[{model: mArea, as:cst.models.locationAreas}]})
             .spread((db,succeed) => {
-              logger.info(req,cmd+'|Inserted:'+succeed+'|'+JSON.stringify(db));
-              cloneDb.buildingLocation = JSON.parse(JSON.stringify(db));
+              logger.info(req,cmd+'|Inserted:'+succeed+'|'+JSON.stringify(db))
+              cloneDb.buildingLocation = JSON.parse(JSON.stringify(db))
               if(succeed){ //Location inserted
                 return resp.getSuccess(req,res,cmd,cloneDb)
               }else{ //Location exist add Area
                 logger.info(req,cmd+'|'+error.desc_01004)
                 cmd = 'insertAreaList'
-                cloneLocation.buildingAreaList.forEach((value) => {value.buildingId=db.buildingId});
-                logger.info(req,cmd+'|AreaList:'+JSON.stringify(cloneLocation.buildingAreaList));
+                cloneLocation.buildingAreaList.forEach((value) => {value.buildingId=db.buildingId})
+                logger.info(req,cmd+'|AreaList:'+JSON.stringify(cloneLocation.buildingAreaList))
                 mArea.bulkCreate(cloneLocation.buildingAreaList, {validate:true})
                 .then((succeed) => {
                   logger.info(req,cmd+'|Inserted:'+JSON.stringify(succeed))
@@ -218,7 +218,7 @@ const contract = {
                   return resp.getSuccess(req,res,cmd,cloneDb)
                 }).catch((err) => {
                   logger.error(req,cmd+'|Error while create AreaList|'+err)
-                  logger.summary(req,cmd+'|'+error.desc_01001);
+                  logger.summary(req,cmd+'|'+error.desc_01001)
                   res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
                 })
               }
@@ -228,39 +228,39 @@ const contract = {
               res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
             })
           }else{ //contract existed don't add location list
-            logger.info(req,cmd+'|'+error.desc_01004);
-            logger.summary(req,cmd+'|'+error.desc_01004);
-            res.json(resp.getJsonError(error.code_01004,error.desc_01004,db));
+            logger.info(req,cmd+'|'+error.desc_01004)
+            logger.summary(req,cmd+'|'+error.desc_01004)
+            res.json(resp.getJsonError(error.code_01004,error.desc_01004,db))
           }
         }).catch((err) => {
-            logger.error(req,cmd+'|Error while create contractList|'+err);
-            logger.summary(req,cmd+'|'+error.desc_01001);
-            res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+            logger.error(req,cmd+'|Error while create contractList|'+err)
+            logger.summary(req,cmd+'|'+error.desc_01001)
+            res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
         })
       }).catch((err) => {
-          logger.error(req,cmd+'|Error while check venderProfile|'+err);
-          logger.summary(req,cmd+'|'+error.desc_01001);
-          res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+          logger.error(req,cmd+'|Error while check venderProfile|'+err)
+          logger.summary(req,cmd+'|'+error.desc_01001)
+          res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
       })
     }catch(err){
-      logger.error(req,cmd+'|'+err);
-      resp.getInternalError(req,res,cmd,err);
+      logger.error(req,cmd+'|'+err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 
   add: (req, res) => { //no need vendorProfile but need valid vendorId to add contract
-    let cmd = 'addContract';
+    let cmd = 'addContract'
     try{
-      // cmd = 'chkVendorProfileExisting';
-      // let jWhere = {vendorType:req.body.requestData.vendorProfile.vendorType, vendorName1:req.body.requestData.vendorProfile.vendorName1};
-      // logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
+      // cmd = 'chkVendorProfileExisting'
+      // let jWhere = {vendorType:req.body.requestData.vendorProfile.vendorType, vendorName1:req.body.requestData.vendorProfile.vendorName1}
+      // logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
       // mVendorProfile.findOne({where:jWhere,attributes:['vendorId']}).then((db) => {
-      //   logger.info(req,cmd+'|'+JSON.stringify(db));
+      //   logger.info(req,cmd+'|'+JSON.stringify(db))
 
       //   if(util.isDataFound(db)){ //already have vendor use old data
-      //     logger.info(req,cmd+'|'+error.desc_01004);
-      //     req.body.requestData.vendorId = db.vendorId; //link old vendor with contract
-      //     delete req.body.requestData.vendorProfile; //delete new vendor data
+      //     logger.info(req,cmd+'|'+error.desc_01004)
+      //     req.body.requestData.vendorId = db.vendorId //link old vendor with contract
+      //     delete req.body.requestData.vendorProfile //delete new vendor data
       //   }
       let cloneLocation = (util.isDataFound(req.body.requestData.buildingLocation))?JSON.parse(JSON.stringify(req.body.requestData.buildingLocation)):null
       if(util.isDataFound(cloneLocation)) delete req.body.requestData.buildingLocation //delete Location
@@ -276,9 +276,9 @@ const contract = {
         delete req.body.requestData.contractVendorAgentList //delete AgentList
       }
       
-        cmd = 'insertContractList';
-        let jWhere = {contractNo:req.body.requestData.contractNo, contractDate:req.body.requestData.contractDate};
-        logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
+        cmd = 'insertContractList'
+        let jWhere = {contractNo:req.body.requestData.contractNo, contractDate:req.body.requestData.contractDate}
+        logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
         mContract.findOrCreate({where:jWhere, defaults:req.body.requestData, include:[
           // {model: mVendorProfile, as:cst.models.vendorProfile,
           //   include:{model:mVendorContact, as:cst.models.vendorContacts}},
@@ -320,7 +320,7 @@ const contract = {
             }
 
             //check and add location here!!!
-            cmd = 'checkLocation';
+            cmd = 'checkLocation'
             if(util.isDataFound(cloneLocation)){
               //add contractId to areaList
               cloneLocation.buildingAreaList.forEach((value) => {value.contractId=db.contractId})
@@ -332,7 +332,7 @@ const contract = {
                   include:[{model: mArea, as:cst.models.locationAreas}]})
                 .spread((db,succeed) => {
                   logger.info(req,'insertLocation|Inserted:'+succeed+'|'+JSON.stringify(db))
-                  // cloneDb.buildingLocation = JSON.parse(JSON.stringify(db));
+                  // cloneDb.buildingLocation = JSON.parse(JSON.stringify(db))
                   if(!succeed){ //Location inserted
                     // return resp.getSuccess(req,res,cmd,cloneDb)
                     // logger.info(req,'insertAgentList|'+JSON.stringify(cloneDb))
@@ -350,7 +350,7 @@ const contract = {
                     }).catch((err) => {
                       logger.error(req,'insertAreaList|Error while create AreaList|'+err)
                       asyncError=1
-                      // logger.summary(req,cmd+'|'+error.desc_01001);
+                      // logger.summary(req,cmd+'|'+error.desc_01001)
                       // res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
                     })
                   }
@@ -380,23 +380,23 @@ const contract = {
             })
 
           }else{ //contract existed don't add location list
-            logger.info(req,cmd+'|'+error.desc_01004);
-            logger.summary(req,cmd+'|'+error.desc_01004);
-            res.json(resp.getJsonError(error.code_01004,error.desc_01004,db));
+            logger.info(req,cmd+'|'+error.desc_01004)
+            logger.summary(req,cmd+'|'+error.desc_01004)
+            res.json(resp.getJsonError(error.code_01004,error.desc_01004,db))
           }
         }).catch((err) => {
-            logger.error(req,cmd+'|Error while create contractList|'+err);
-            logger.summary(req,cmd+'|'+error.desc_01001);
-            res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+            logger.error(req,cmd+'|Error while create contractList|'+err)
+            logger.summary(req,cmd+'|'+error.desc_01001)
+            res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
         })
       // }).catch((err) => {
-      //     logger.error(req,cmd+'|Error while check venderProfile|'+err);
-      //     logger.summary(req,cmd+'|'+error.desc_01001);
-      //     res.json(resp.getJsonError(error.code_01001,error.desc_01001,err));
+      //     logger.error(req,cmd+'|Error while check venderProfile|'+err)
+      //     logger.summary(req,cmd+'|'+error.desc_01001)
+      //     res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
       // })
     }catch(err){
-      logger.error(req,cmd+'|'+err);
-      resp.getInternalError(req,res,cmd,err);
+      logger.error(req,cmd+'|'+err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 
@@ -567,7 +567,8 @@ const contract = {
         cmd = 'checkContractBuildingTasks'
         if(util.isDataFound(asyncTasks)){
           logger.info(req,cmd+'|Have Tasks')
-          let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.editContractComplete
+          let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.status.editContractComplete
+          logger.debug(req,cmd+'|cStatus:'+cStatus+'|urStatusFound:'+util.isDataFound(req.body.requestData.urStatus))
 
           cmd = 'pushUpdateUrStatusTask'
           edit.countPush = edit.countPush + 1
@@ -927,26 +928,26 @@ const contract = {
     try{
       cmd = 'chkPaging'
       const jLimit={offset: null, limit: null}
-      // console.log('jLimit : '+chalk.blue(JSON.stringify(jLimit)));
+      // console.log('jLimit : '+chalk.blue(JSON.stringify(jLimit)))
       if(Object.keys(req.query).length !=0){
         cmd = 'chkPageCount'
-        // console.log(chalk.green('=========== NOT NUll ==========='));
+        // console.log(chalk.green('=========== NOT NUll ==========='))
         if(util.isDigit(req.query.page) && util.isDigit(req.query.count)){
-          // console.log(chalk.green('=========== isDigit ==========='));
+          // console.log(chalk.green('=========== isDigit ==========='))
           jLimit.offset = (req.query.page -1)*req.query.count
           jLimit.limit = parseInt(req.query.count)
         }else{
           logger.info(req,cmd+'|page or count is wrong format')
           return resp.getIncompleteParameter(req,res,cmd)
-          // console.log(chalk.green('=========== Invalid ==========='));
-          // return res.json(resp.getJsonError(error.code_00005,error.desc_00005));
+          // console.log(chalk.green('=========== Invalid ==========='))
+          // return res.json(resp.getJsonError(error.code_00005,error.desc_00005))
         }
       }
       logger.info(req,cmd+'|'+JSON.stringify(jLimit))
 
       cmd = 'chkRequestBody'
       if(util.isDataFound(req.body)){
-        let jWhere = {};
+        let jWhere = {}
         cmd = 'genContractCriteria'
         if(util.isDataFound(req.body.requestData.contractCriteria)){
           logger.info(req,cmd+'|selected Contract')
@@ -1093,7 +1094,7 @@ const contract = {
         return resp.getIncompleteParameter(req,res,cmd)
       }
     }catch(err){
-      logger.error(req,cmd+'|'+err);
+      logger.error(req,cmd+'|'+err)
       return resp.getInternalError(req,res,cmd,err)
     }
   }
