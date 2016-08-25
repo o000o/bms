@@ -3,7 +3,6 @@
 const resp = require('../utils/respUtils')
 const util = require('../utils/bmsUtils')
 const logger = require('../utils/logUtils')
-const jsUtil = require('util')
 const error = require('../config/error')
 const cst = require('../config/constant')
 const mContract = require('../models/mContract')
@@ -166,20 +165,20 @@ const contract = {
     try{
       cmd = 'chkVendorProfileExisting'
       let jWhere = {vendorType:req.body.requestData.vendorProfile.vendorType, vendorName1:req.body.requestData.vendorProfile.vendorName1}
-      logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
+      logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
       mVendorProfile.findOne({where:jWhere,attributes:['vendorId']}).then((db) => {
-        logger.info(req,cmd+'|'+JSON.stringify(db))
+        logger.info(req,cmd+'|'+util.jsonToText(db))
 
         if(util.isDataFound(db)){ //already have vendor use old data
           logger.info(req,cmd+'|'+error.desc_01004)
           req.body.requestData.vendorId = db.vendorId //link old vendor with contract
           delete req.body.requestData.vendorProfile //delete new vendor data
         }
-        let cloneLocation = JSON.parse(JSON.stringify(req.body.requestData.buildingLocation))
+        let cloneLocation = JSON.parse(util.jsonToText(req.body.requestData.buildingLocation))
         delete req.body.requestData.buildingLocation //delete Location
         cmd = 'insertContractList'
         jWhere = {contractNo:req.body.requestData.contractNo, contractDate:req.body.requestData.contractDate}
-        logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
+        logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
         mContract.findOrCreate({where:jWhere, defaults:req.body.requestData, include:[
           {model: mVendorProfile, as:cst.models.vendorProfile,
             include:{model:mVendorContact, as:cst.models.vendorContacts}},
@@ -188,34 +187,34 @@ const contract = {
           // {model: mLocation, as:'buildingLocation',through:{model:mArea, as:'buildingAreaList'}}
         ]})
         .spread((db,succeed) => {
-          logger.info(req,cmd+'|Inserted:'+succeed+'|'+JSON.stringify(db))
+          logger.info(req,cmd+'|Inserted:'+succeed+'|'+util.jsonToText(db))
           if(succeed){ //contract inserted
             //check and add location here!!!
             cmd = 'insertLocation'
-            let cloneDb = JSON.parse(JSON.stringify(db))
+            let cloneDb = JSON.parse(util.jsonToText(db))
             //add contractId to areaList
             cloneLocation.buildingAreaList.forEach((value) => {value.contractId=db.contractId})
             jWhere={buildingName:cloneLocation.buildingName, buildingNo:cloneLocation.buildingNo}
-            logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
-            logger.info(req,cmd+'|Location:'+JSON.stringify(cloneLocation))
+            logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
+            logger.info(req,cmd+'|Location:'+util.jsonToText(cloneLocation))
             mLocation.findOrCreate({where:jWhere, defaults:cloneLocation,
               include:[{model: mArea, as:cst.models.locationAreas}]})
             .spread((db,succeed) => {
-              logger.info(req,cmd+'|Inserted:'+succeed+'|'+JSON.stringify(db))
-              cloneDb.buildingLocation = JSON.parse(JSON.stringify(db))
+              logger.info(req,cmd+'|Inserted:'+succeed+'|'+util.jsonToText(db))
+              cloneDb.buildingLocation = JSON.parse(util.jsonToText(db))
               if(succeed){ //Location inserted
-                return resp.getSuccess(req,res,cmd,cloneDb)
+                resp.getSuccess(req,res,cmd,cloneDb)
               }else{ //Location exist add Area
                 logger.info(req,cmd+'|'+error.desc_01004)
                 cmd = 'insertAreaList'
                 cloneLocation.buildingAreaList.forEach((value) => {value.buildingId=db.buildingId})
-                logger.info(req,cmd+'|AreaList:'+JSON.stringify(cloneLocation.buildingAreaList))
+                logger.info(req,cmd+'|AreaList:'+util.jsonToText(cloneLocation.buildingAreaList))
                 mArea.bulkCreate(cloneLocation.buildingAreaList, {validate:true})
                 .then((succeed) => {
-                  logger.info(req,cmd+'|Inserted:'+JSON.stringify(succeed))
+                  logger.info(req,cmd+'|Inserted:'+util.jsonToText(succeed))
                   //too lazy too query area again so just return contract
                   delete cloneDb.buildingLocation.buildingAreaList //delete areaList from other contract
-                  return resp.getSuccess(req,res,cmd,cloneDb)
+                  resp.getSuccess(req,res,cmd,cloneDb)
                 }).catch((err) => {
                   logger.error(req,cmd+'|Error while create AreaList|'+err)
                   logger.summary(req,cmd+'|'+error.desc_01001)
@@ -253,16 +252,16 @@ const contract = {
     try{
       // cmd = 'chkVendorProfileExisting'
       // let jWhere = {vendorType:req.body.requestData.vendorProfile.vendorType, vendorName1:req.body.requestData.vendorProfile.vendorName1}
-      // logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
+      // logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
       // mVendorProfile.findOne({where:jWhere,attributes:['vendorId']}).then((db) => {
-      //   logger.info(req,cmd+'|'+JSON.stringify(db))
+      //   logger.info(req,cmd+'|'+util.jsonToText(db))
 
       //   if(util.isDataFound(db)){ //already have vendor use old data
       //     logger.info(req,cmd+'|'+error.desc_01004)
       //     req.body.requestData.vendorId = db.vendorId //link old vendor with contract
       //     delete req.body.requestData.vendorProfile //delete new vendor data
       //   }
-      let cloneLocation = (util.isDataFound(req.body.requestData.buildingLocation))?JSON.parse(JSON.stringify(req.body.requestData.buildingLocation)):null
+      let cloneLocation = (util.isDataFound(req.body.requestData.buildingLocation))?JSON.parse(util.jsonToText(req.body.requestData.buildingLocation)):null
       if(util.isDataFound(cloneLocation)) delete req.body.requestData.buildingLocation //delete Location
 
       let cloneAgent = []
@@ -278,7 +277,7 @@ const contract = {
       
         cmd = 'insertContractList'
         let jWhere = {contractNo:req.body.requestData.contractNo, contractDate:req.body.requestData.contractDate}
-        logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
+        logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
         mContract.findOrCreate({where:jWhere, defaults:req.body.requestData, include:[
           // {model: mVendorProfile, as:cst.models.vendorProfile,
           //   include:{model:mVendorContact, as:cst.models.vendorContacts}},
@@ -287,10 +286,10 @@ const contract = {
           // {model: mLocation, as:'buildingLocation',through:{model:mArea, as:'buildingAreaList'}}
         ]})
         .spread((db,succeed) => {
-          logger.info(req,cmd+'|Inserted:'+succeed+'|'+JSON.stringify(db))
+          logger.info(req,cmd+'|Inserted:'+succeed+'|'+util.jsonToText(db))
           if(succeed){ //contract inserted
-            // return resp.getSuccess(req,res,cmd,succeed)
-            let cloneDb = JSON.parse(JSON.stringify(db))
+            // resp.getSuccess(req,res,cmd,succeed)
+            let cloneDb = JSON.parse(util.jsonToText(db))
             let asyncTasks=[]
             let asyncError=0
 
@@ -306,9 +305,9 @@ const contract = {
               asyncTasks.push((callback)=>{
                 mContractAgent.bulkCreate(cloneAgent, {validate:true})
                 .then((succeed) => {
-                  logger.info(req,'insertAgentList|'+JSON.stringify(succeed))
+                  logger.info(req,'insertAgentList|'+util.jsonToText(succeed))
                   callback()
-                  // return resp.getSuccess(req,res,cmd)
+                  // resp.getSuccess(req,res,cmd)
                 }).catch((err) => {
                   logger.error(req,'insertAgentList|'+err)
                   asyncError=1
@@ -326,27 +325,27 @@ const contract = {
               cloneLocation.buildingAreaList.forEach((value) => {value.contractId=db.contractId})
               asyncTasks.push((callback)=>{
                 jWhere={buildingName:cloneLocation.buildingName, buildingNo:cloneLocation.buildingNo}
-                logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
-                logger.info(req,cmd+'|Location:'+JSON.stringify(cloneLocation))
+                logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
+                logger.info(req,cmd+'|Location:'+util.jsonToText(cloneLocation))
                 mLocation.findOrCreate({where:jWhere, defaults:cloneLocation,
                   include:[{model: mArea, as:cst.models.locationAreas}]})
                 .spread((db,succeed) => {
-                  logger.info(req,'insertLocation|Inserted:'+succeed+'|'+JSON.stringify(db))
-                  // cloneDb.buildingLocation = JSON.parse(JSON.stringify(db))
+                  logger.info(req,'insertLocation|Inserted:'+succeed+'|'+util.jsonToText(db))
+                  // cloneDb.buildingLocation = JSON.parse(util.jsonToText(db))
                   if(!succeed){ //Location inserted
-                    // return resp.getSuccess(req,res,cmd,cloneDb)
-                    // logger.info(req,'insertAgentList|'+JSON.stringify(cloneDb))
+                    // resp.getSuccess(req,res,cmd,cloneDb)
+                    // logger.info(req,'insertAgentList|'+util.jsonToText(cloneDb))
                   // }else{ //Location exist add Area
                     logger.info(req,'insertLocation|'+error.desc_01004)
                     // cmd = 'insertAreaList'
                     cloneLocation.buildingAreaList.forEach((value) => {value.buildingId=db.buildingId})
-                    logger.info(req,'insertAreaList|AreaList:'+JSON.stringify(cloneLocation.buildingAreaList))
+                    logger.info(req,'insertAreaList|AreaList:'+util.jsonToText(cloneLocation.buildingAreaList))
                     mArea.bulkCreate(cloneLocation.buildingAreaList, {validate:true})
                     .then((succeed) => {
-                      logger.info(req,'insertAreaList|Inserted:'+JSON.stringify(succeed))
+                      logger.info(req,'insertAreaList|Inserted:'+util.jsonToText(succeed))
                       //too lazy too query area again so just return contract
                       // delete cloneDb.buildingLocation.buildingAreaList //delete areaList from other contract
-                      // return resp.getSuccess(req,res,cmd,cloneDb)
+                      // resp.getSuccess(req,res,cmd,cloneDb)
                     }).catch((err) => {
                       logger.error(req,'insertAreaList|Error while create AreaList|'+err)
                       asyncError=1
@@ -374,8 +373,8 @@ const contract = {
                 logger.summary(req,cmd+'|'+error.desc_01001)
                 res.json(resp.getJsonError(error.code_01001,error.desc_01001,cloneDb))
               }else{
-                // logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result}))
-                return resp.getSuccess(req,res,cmd,cloneDb)
+                // logger.info(req,cmd+'|'+ util.jsonToText({contractId:tContractId,result}))
+                resp.getSuccess(req,res,cmd,cloneDb)
               }
             })
 
@@ -403,16 +402,22 @@ const contract = {
   editLocation: (req, res) => {
     let cmd = 'editLocation'
     let edit = {}
+    // let uMsg = []
     try{
       if(util.isDataFound(req.body.requestData)&&util.isDataFound(req.body.requestData.contractId)&&util.isDataFound(req.body.requestData.urId)){
         let asyncTasks = [] // Array to hold async tasks
         edit.contractId = req.body.requestData.contractId
-        edit.countPush = 0
-        edit.countSuccess = 0
-        edit.countError = 0
+        edit.countPush = 0 //not count on datas that not push on asyncTasks
+        edit.countSuccess = 0 //not count on datas that not push on asyncTasks
+        edit.countError = 0 //not count on update UR and create workflow Error but on datas that not push on asyncTasks
+        edit.contractUpdateError = 0
+        edit.locationUpdateError = 0
+        edit.areaInsertError = 0
+        edit.areaUpdateError = 0
+        edit.areaDeleteError = 0
         edit.editResults = []
         cmd = 'checkContractData'
-        let ctData = JSON.parse(JSON.stringify(req.body.requestData))
+        let ctData = JSON.parse(util.jsonToText(req.body.requestData))
         delete ctData.buildingLocation
         delete ctData.contractId
         delete ctData.urId
@@ -422,24 +427,28 @@ const contract = {
           edit.countPush = edit.countPush + 1
           asyncTasks.push((callback)=>{
             let ctWhere = {contractId:edit.contractId}
-            logger.info(req,'runUpdateContractTask|contract:'+JSON.stringify(ctData)+'|where:'+JSON.stringify(ctWhere))
+            logger.info(req,'runUpdateContractTask|contract:'+util.jsonToText(ctData)+'|where:'+util.jsonToText(ctWhere))
             mContract.update(ctData,{where:ctWhere}).then((succeed) => {
               // ctWhere.editStatus='Updated '+succeed+' rows'
-              if(util.isDataFound(succeed)){
+              if(succeed>0){
                 edit.countSuccess = edit.countSuccess + 1
                 edit.editResults.push({contractId:edit.contractId,editStatus:'Updated '+succeed+' rows'})
               }else{
                 edit.countError = edit.countError + 1
-                ctData.where = edit.contractId
-                ctData.editStatus='Update Error:'+succeed
+                edit.contractUpdateError = edit.contractUpdateError + 1
+                ctData.updateWhere = edit.contractId
+                ctData.editStatus='No row Update'
                 edit.editResults.push(ctData)
+                // uMsg.push('แก้ไขข้อมูลสัญญาไม่สำเร็จ')
               }
               callback()
             }).catch((err) => {
               edit.countError = edit.countError + 1
-              ctData.where = edit.contractId
+              edit.contractUpdateError = edit.contractUpdateError + 1
+              ctData.updateWhere = edit.contractId
               ctData.editStatus='Update Error:'+err
               edit.editResults.push(ctData)
+              // uMsg.push('แก้ไขข้อมูลสัญญาไม่สำเร็จ')
               callback()
             })
           })
@@ -448,7 +457,7 @@ const contract = {
         cmd = 'checkLocationData'
         if(util.isDataFound(req.body.requestData.buildingLocation)){
           let tbuildingId = util.isDataFound(req.body.requestData.buildingLocation.buildingId) ? req.body.requestData.buildingLocation.buildingId : 0
-          let loData = JSON.parse(JSON.stringify(req.body.requestData.buildingLocation))
+          let loData = JSON.parse(util.jsonToText(req.body.requestData.buildingLocation))
           delete loData.buildingAreaList
           delete loData.buildingId
           cmd = 'pushUpdateLocationTask'
@@ -457,30 +466,36 @@ const contract = {
               edit.countPush = edit.countPush + 1
               asyncTasks.push((callback)=>{
                 let loWhere = {buildingId:tbuildingId}
-                logger.info(req,'runUpdateLocationTask|location:'+JSON.stringify(loData)+'|where:'+JSON.stringify(loWhere))
+                logger.info(req,'runUpdateLocationTask|location:'+util.jsonToText(loData)+'|where:'+util.jsonToText(loWhere))
                 mLocation.update(loData,{where:loWhere}).then((succeed) => {
-                  if(util.isDataFound(succeed)){
+                  if(succeed>0){
                     edit.countSuccess = edit.countSuccess + 1
                     edit.editResults.push({buildingId:tbuildingId, editStatus:'Updated '+succeed+' rows'})
                   }else{
                     edit.countError = edit.countError + 1
-                    loData.where = tbuildingId
-                    loData.editStatus='Update Error:'+succeed
+                    edit.locationUpdateError = edit.locationUpdateError + 1
+                    loData.updateWhere = tbuildingId
+                    loData.editStatus='No row Update'
                     edit.editResults.push(loData)
+                    // uMsg.push('แก้ไขข้อมูลสถานที่ไม่สำเร็จ')
                   }
                   callback()
                 }).catch((err) => {
                   edit.countError = edit.countError + 1
-                  loData.where = tbuildingId
+                  edit.locationUpdateError = edit.locationUpdateError + 1
+                  loData.updateWhere = tbuildingId
                   loData.editStatus='Update Error:'+err
                   edit.editResults.push(loData)
+                  // uMsg.push('แก้ไขข้อมูลสถานที่ไม่สำเร็จ')
                   callback()
                 })
               })
             }else{
               edit.countError = edit.countError + 1
+              edit.locationUpdateError = edit.locationUpdateError + 1
               loData.editStatus = 'BadRequest:Can not update Location without buildingId'
               edit.editResults.push(loData)
+              // uMsg.push('แก้ไขข้อมูลสถานที่ไม่สำเร็จ')
               callback()
             }
           }
@@ -496,7 +511,9 @@ const contract = {
                     edit.editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Deleted '+succeed+' rows'})
                     callback()
                   }).catch((err) => {
+                    // uMsg.push('ลบข้อมูลพื้นที่ไม่สำเร็จ')
                     edit.countError = edit.countError + 1
+                    edit.areaDeleteError = edit.areaDeleteError + 1
                     edit.editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Delete Error:'+err})
                     callback()
                   })
@@ -505,7 +522,7 @@ const contract = {
                 //insert
                 edit.countPush = edit.countPush + 1
                 asyncTasks.push((callback)=>{
-                  let jInsert = JSON.parse(JSON.stringify(item))
+                  let jInsert = JSON.parse(util.jsonToText(item))
                   delete jInsert.editAction
                   jInsert.contractId = edit.contractId
                   jInsert.buildingId = tbuildingId
@@ -517,8 +534,10 @@ const contract = {
                   }).catch((err) => {
                     // jInsert.editStatus='Insert Error:'+err
                     // editResults.push(jInsert)
+                    // uMsg.push('เพิ่มข้อมูลพื้นที่ไม่สำเร็จ')
                     item.editStatus='Insert Error:'+err
                     edit.countError = edit.countError + 1
+                    edit.areaInsertError = edit.areaInsertError + 1
                     edit.editResults.push(item)
                     callback()
                   })
@@ -527,17 +546,19 @@ const contract = {
                 //update
                 edit.countPush = edit.countPush + 1
                 asyncTasks.push((callback)=>{
-                  let jUpdate = JSON.parse(JSON.stringify(item))
+                  let jUpdate = JSON.parse(util.jsonToText(item))
                   delete jUpdate.editAction
                   delete jUpdate.buildingAreaId
                   mArea.update(jUpdate,{where:{buildingAreaId:item.buildingAreaId}}).then((succeed) => {
-                    if(util.isDataFound(succeed)){
+                    if(succeed>0){
                       edit.countSuccess = edit.countSuccess + 1
                       edit.editResults.push({buildingAreaId:item.buildingAreaId, editStatus:'Updated '+succeed+' rows'})
                     }else{
+                      // uMsg.push('แก้ไขข้อมูลพื้นที่ไม่สำเร็จ')
                       edit.countError = edit.countError + 1
-                      jUpdate.where = item.buildingAreaId
-                      jUpdate.editStatus='Update Error:'+succeed
+                      edit.areaUpdateError = edit.areaUpdateError + 1
+                      jUpdate.updateWhere = item.buildingAreaId
+                      jUpdate.editStatus='No row Update'
                       edit.editResults.push(jUpdate)
                     }
                     callback()
@@ -545,15 +566,19 @@ const contract = {
                     // jUpdate.buildingAreaId = item.buildingAreaId
                     // jUpdate.editStatus='Update Error:'+err
                     // editResults.push(jUpdate)
+                    // uMsg.push('แก้ไขข้อมูลพื้นที่ไม่สำเร็จ')
                     jUpdate.editStatus='Update Error:'+err
-                    jUpdate.where = item.buildingAreaId
+                    jUpdate.updateWhere = item.buildingAreaId
                     edit.countError = edit.countError + 1
+                    edit.areaUpdateError = edit.areaUpdateError + 1
                     edit.editResults.push(jUpdate)
                     callback()
                   })
                 })
               }else{ //conflict not insert or update DB
+                // uMsg.push('แก้ไขข้อมูลพื้นที่ไม่สำเร็จ')
                 edit.countError = edit.countError + 1
+                edit.areaUpdateError = edit.areaUpdateError + 1
                 item.editStatus = 'BadRequest:Conflict between data and editAction'
                 edit.editResults.push(item)
               }
@@ -574,20 +599,20 @@ const contract = {
           edit.countPush = edit.countPush + 1
           asyncTasks.push((callback)=>{
             let urWhere = {urId:req.body.requestData.urId, urStatus:{$ne:cStatus}}
-            logger.info(req,'runUpdateUrStatusTask|urStatus:'+cStatus+'|where:'+JSON.stringify(urWhere))
+            logger.info(req,'runUpdateUrStatusTask|urStatus:'+cStatus+'|where:'+util.jsonToText(urWhere))
             mUR.update({urStatus:cStatus},{where:urWhere}).then((succeed) => {
               // urWhere.editStatus='Updated '+succeed+' rows'
-              if(util.isDataFound(succeed)){
+              if(succeed>0){
                 edit.countSuccess = edit.countSuccess + 1
                 edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
               }else{
-                edit.countError = edit.countError + 1
-                edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+succeed})
+                // edit.countError = edit.countError + 1 //wanna return success to user cause user can't do anything about this
+                edit.editResults.push({urId:req.body.requestData.urId, editStatus:'No row Update'})
               }
               callback()
             }).catch((err) => {
               // urWhere.editStatus='Update Error:'+err
-              edit.countError = edit.countError + 1
+              // edit.countError = edit.countError + 1 //wanna return success to user cause user can't do anything about this
               edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
               callback()
             })
@@ -599,7 +624,7 @@ const contract = {
             let upBy = req.header('x-userTokenId') ? util.getUserName(req.header('x-userTokenId')):'system'
             let workFlowData = {urId:req.body.requestData.urId,urStatus:cStatus,updateBy:upBy}
             let wfWhere = {urId:req.body.requestData.urId, urStatus:cStatus}
-            logger.info(req,'runhInsertWorkflowTask|workFlow:'+JSON.stringify(workFlowData)+'|where:'+JSON.stringify(wfWhere))
+            logger.info(req,'runhInsertWorkflowTask|workFlow:'+util.jsonToText(workFlowData)+'|where:'+util.jsonToText(wfWhere))
             mUrWf.findOrCreate({where:wfWhere, defaults:workFlowData})
             .spread((db,succeed) => {
               let dbClone = {}
@@ -610,7 +635,7 @@ const contract = {
               edit.editResults.push(dbClone)
               callback()
             }).catch((err) => {
-              edit.countError = edit.countError + 1
+              // edit.countError = edit.countError + 1 //wanna return success to user cause user can't do anything about this
               workFlowData.editStatus = 'Insert Error:'+err
               edit.editResults.push(workFlowData)
               callback()
@@ -620,14 +645,79 @@ const contract = {
           cmd = 'runAsyncTasks'
           async.parallel(asyncTasks, ()=>{ // All tasks are done now
             // doSomethingOnceAllAreDone()
-            if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ JSON.stringify(edit))
+            if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ util.jsonToText(edit))
             if(edit.countError){
               logger.error(req,cmd+'|Error while run asyncTasks|')
-              logger.summary(req,cmd+'|'+error.desc_01001)
-              res.json(resp.getJsonError(error.code_01001,error.desc_01001,edit))
+              if(edit.contractUpdateError&&edit.locationUpdateError
+                &&(edit.areaUpdateError||edit.areaDeleteError||edit.areaInsertError)){
+                if(!edit.areaUpdateError&&edit.areaDeleteError&&!edit.areaInsertError){
+// error.desc_01014 = 'Contract, Lodation update and Area delete unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01014)
+                  res.json(resp.getJsonError(error.code_01014,error.desc_01014,edit))
+                }else if(!edit.areaUpdateError&&!edit.areaDeleteError&&edit.areaInsertError){
+// error.desc_01018 = 'Contract, Lodation update and Area insert unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01018)
+                  res.json(resp.getJsonError(error.code_01018,error.desc_01018,edit))
+                }else{
+                  // error.desc_01010 = 'Contract, Lodation and Area update unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01010)
+                  res.json(resp.getJsonError(error.code_01010,error.desc_01010,edit))
+                }
+              }else if(edit.contractUpdateError
+                &&(edit.areaUpdateError||edit.areaDeleteError||edit.areaInsertError)){
+                if(!edit.areaUpdateError&&edit.areaDeleteError&&!edit.areaInsertError){
+// error.desc_01013 = 'Contract udpate and Area delete unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01013)
+                  res.json(resp.getJsonError(error.code_01013,error.desc_01013,edit))
+                }else if(!edit.areaUpdateError&&!edit.areaDeleteError&&edit.areaInsertError){
+// error.desc_01017 = 'Contract udpate and Area insert unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01017)
+                  res.json(resp.getJsonError(error.code_01017,error.desc_01017,edit))
+                }else{
+                  // error.desc_01009 = 'Contract and Area update unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01009)
+                  res.json(resp.getJsonError(error.code_01009,error.desc_01009,edit))
+                }
+              }else if(edit.locationUpdateError
+                &&(edit.areaUpdateError||edit.areaDeleteError||edit.areaInsertError)){
+                if(!edit.areaUpdateError&&edit.areaDeleteError&&!edit.areaInsertError){
+// error.desc_01015 = 'Location update and Area delete unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01015)
+                  res.json(resp.getJsonError(error.code_01015,error.desc_01015,edit))
+                }else if(!edit.areaUpdateError&&!edit.areaDeleteError&&edit.areaInsertError){
+// error.desc_01019 = 'Location update and Area insert unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01019)
+                  res.json(resp.getJsonError(error.code_01019,error.desc_01019,edit))
+                }else{
+                  // error.desc_01011 = 'Location and Area update unsuccess'
+                  logger.summary(req,cmd+'|'+error.desc_01011)
+                  res.json(resp.getJsonError(error.code_01011,error.desc_01011,edit))
+                }
+              }else if(edit.contractUpdateError&&edit.locationUpdateError){
+                logger.summary(req,cmd+'|'+error.desc_01008)
+                res.json(resp.getJsonError(error.code_01008,error.desc_01008,edit))
+              }else if(edit.areaDeleteError){
+                logger.summary(req,cmd+'|'+error.desc_01012)
+                res.json(resp.getJsonError(error.code_01012,error.desc_01012,edit))
+              }else if(edit.areaUpdateError){
+                logger.summary(req,cmd+'|'+error.desc_01007)
+                res.json(resp.getJsonError(error.code_01007,error.desc_01007,edit))
+              }else if(edit.areaInsertError){
+                logger.summary(req,cmd+'|'+error.desc_01016)
+                res.json(resp.getJsonError(error.code_01016,error.desc_01016,edit))
+              }else if(edit.locationUpdateError){
+                logger.summary(req,cmd+'|'+error.desc_01006)
+                res.json(resp.getJsonError(error.code_01006,error.desc_01006,edit))
+              }else if(edit.contractUpdateError){
+                logger.summary(req,cmd+'|'+error.desc_01005)
+                res.json(resp.getJsonError(error.code_01005,error.desc_01005,edit))
+              }else{
+                logger.summary(req,cmd+'|'+error.desc_01001)
+                res.json(resp.getJsonError(error.code_01001,error.desc_01001,edit))
+              }
             }else{
-              // logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result}))
-              return resp.getSuccess(req,res,cmd,edit)
+              // logger.info(req,cmd+'|'+ util.jsonToText({contractId:tContractId,result}))
+              resp.getSuccess(req,res,cmd)
             }
           })
         }else{
@@ -638,10 +728,10 @@ const contract = {
       }else{
         let err = 'Incomplete requestData'
         logger.info(req,cmd+'|'+err)
-        return resp.getIncompleteParameter(req,res,cmd,err)
+        resp.getIncompleteParameter(req,res,cmd,err)
       }
     }catch(err){
-      if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ JSON.stringify(edit))
+      if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ util.jsonToText(edit))
       logger.error(req,cmd+'|'+err)
       resp.getInternalError(req,res,cmd,err)
     }
@@ -682,10 +772,10 @@ const contract = {
                         delete vendorAgent.editAction
                         asyncTasks.push((callback) => {
                             mContractAgent.create(vendorAgent).then((succeed) => {
-                                logger.info(req, 'UpdateVendorAgent|Data:' + JSON.stringify(vendorAgent) + '|Create complete')
+                                logger.info(req, 'UpdateVendorAgent|Data:' + util.jsonToText(vendorAgent) + '|Create complete')
                                 callback(null, succeed)
                             }).catch((err) => {
-                                logger.error(req, 'UpdateVendorAgent|Data:' + JSON.stringify(vendorAgent) + '|Error:' + err)
+                                logger.error(req, 'UpdateVendorAgent|Data:' + util.jsonToText(vendorAgent) + '|Error:' + err)
                                 callback(err, null)
                             })
                         })
@@ -699,10 +789,10 @@ const contract = {
                             mContractAgent.destroy({
                                 where: jWhere2
                             }).then((succeed) => {
-                                logger.info(req, 'UpdateVendorAgent|Data:' + JSON.stringify(vendorAgent) + '|Deleted ' + succeed + ' records')
+                                logger.info(req, 'UpdateVendorAgent|Data:' + util.jsonToText(vendorAgent) + '|Deleted ' + succeed + ' records')
                                 callback(null, succeed)
                             }).catch((err) => {
-                                logger.error(req, 'UpdateVendorAgent|Data:' + JSON.stringify(vendorAgent) + '|Error:' + err)
+                                logger.error(req, 'UpdateVendorAgent|Data:' + util.jsonToText(vendorAgent) + '|Error:' + err)
                                 callback(err, null)
                             })
                         })
@@ -733,11 +823,11 @@ const contract = {
                     },
                     defaults: workFlowData
                 }).spread((db, succeed) => {
-                    if (succeed) logger.info(req, 'PushUpdateUrWfStatusTasks|Data:' + JSON.stringify(workFlowData) + '|Create complete')
-                    else logger.info(req, 'PushUpdateUrWfStatusTasks|Data:' + JSON.stringify(workFlowData) + '|Create duplicate')
+                    if (succeed) logger.info(req, 'PushUpdateUrWfStatusTasks|Data:' + util.jsonToText(workFlowData) + '|Create complete')
+                    else logger.info(req, 'PushUpdateUrWfStatusTasks|Data:' + util.jsonToText(workFlowData) + '|Create duplicate')
                     callback(null, succeed)
                 }).catch((err) => {
-                    logger.error(req, 'PushUpdateUrWfStatusTasks|Data:' + JSON.stringify(workFlowData) + '|Error:' + err)
+                    logger.error(req, 'PushUpdateUrWfStatusTasks|Data:' + util.jsonToText(workFlowData) + '|Error:' + err)
                     callback(err, null)
                 })
             })
@@ -789,7 +879,7 @@ const contract = {
             //insert
             edit.countPush = edit.countPush + 1
             asyncTasks.push((callback)=>{
-              let jInsert = JSON.parse(JSON.stringify(item))
+              let jInsert = JSON.parse(util.jsonToText(item))
               delete jInsert.editAction
               jInsert.contractId = edit.contractId
               mPayment.create(jInsert).then((succeed) => {
@@ -808,7 +898,7 @@ const contract = {
             //update
             edit.countPush = edit.countPush + 1
             asyncTasks.push((callback)=>{
-              let jUpdate = JSON.parse(JSON.stringify(item))
+              let jUpdate = JSON.parse(util.jsonToText(item))
               delete jUpdate.editAction
               delete jUpdate.contractPaymentId
               mPayment.update(jUpdate,{where:{contractPaymentId:item.contractPaymentId}}).then((succeed) => {
@@ -849,21 +939,21 @@ const contract = {
           edit.countPush = edit.countPush + 1
           asyncTasks.push((callback)=>{
             let urWhere = {urId:req.body.requestData.urId, urStatus:{$ne:cStatus}}
-            logger.info(req,'runUpdateUrStatusTask|urStatus:'+cStatus+'|where:'+JSON.stringify(urWhere))
+            logger.info(req,'runUpdateUrStatusTask|urStatus:'+cStatus+'|where:'+util.jsonToText(urWhere))
             mUR.update({urStatus:cStatus},{where:urWhere}).then((succeed) => {
               // urWhere.editStatus='Updated '+succeed+' rows' //urId become ur_id if use this line
               if(util.isDataFound(succeed)){
                 edit.countSuccess = edit.countSuccess + 1
                 edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Updated '+succeed+' rows'})
               }else{
-                edit.countError = edit.countError + 1
+                // edit.countError = edit.countError + 1
                 edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+succeed})
               }
               callback()
             }).catch((err) => {
               // urWhere.editStatus='Update Error:'+err //urId become ur_id if use this line
               edit.editResults.push({urId:req.body.requestData.urId, editStatus:'Update Error:'+err})
-              edit.countError = edit.countError + 1
+              // edit.countError = edit.countError + 1
               callback()
             })
           })
@@ -874,7 +964,7 @@ const contract = {
             let upBy = req.header('x-userTokenId') ? util.getUserName(req.header('x-userTokenId')):'system'
             let workFlowData = {urId:req.body.requestData.urId,urStatus:cStatus,updateBy:upBy}
             let wfWhere = {urId:req.body.requestData.urId, urStatus:cStatus}
-            logger.info(req,'runInsertWorkflowTask|workFlow:'+JSON.stringify(workFlowData)+'|where:'+JSON.stringify(wfWhere))
+            logger.info(req,'runInsertWorkflowTask|workFlow:'+util.jsonToText(workFlowData)+'|where:'+util.jsonToText(wfWhere))
             mUrWf.findOrCreate({where:wfWhere, defaults:workFlowData})
             .spread((db,succeed) => {
               let dbClone = {}
@@ -887,7 +977,7 @@ const contract = {
             }).catch((err) => {
               workFlowData.editStatus = 'Insert Error:'+err
               edit.editResults.push(workFlowData)
-              edit.countError = edit.countError + 1
+              // edit.countError = edit.countError + 1
               callback()
             })
           })
@@ -896,14 +986,14 @@ const contract = {
           async.parallel(asyncTasks, ()=>{
             // All tasks are done now
             // doSomethingOnceAllAreDone()
-            if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ JSON.stringify(edit))
+            if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ util.jsonToText(edit))
             if(edit.countError){
               logger.error(req,cmd+'|Error while run asyncTasks|')
               logger.summary(req,cmd+'|'+error.desc_01001)
               res.json(resp.getJsonError(error.code_01001,error.desc_01001,edit))
             }else{
-              // logger.info(req,cmd+'|'+ JSON.stringify({contractId:tContractId,result}))
-              return resp.getSuccess(req,res,cmd,edit)
+              // logger.info(req,cmd+'|'+ util.jsonToText({contractId:tContractId,result}))
+              resp.getSuccess(req,res,cmd,edit)
             }
           })
         }else{
@@ -914,10 +1004,10 @@ const contract = {
       }else{
         let err = 'Incomplete requestData'
         logger.info(req,cmd+'|'+err)
-        return resp.getIncompleteParameter(req,res,cmd,err)
+        resp.getIncompleteParameter(req,res,cmd,err)
       }
     }catch(err){
-      if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ JSON.stringify(edit))
+      if(util.isDataFound(edit)) logger.info(req,cmd+'|'+ util.jsonToText(edit))
       logger.error(req,cmd+'|'+err)
       resp.getInternalError(req,res,cmd,err)
     }
@@ -928,7 +1018,7 @@ const contract = {
     try{
       cmd = 'chkPaging'
       const jLimit={offset: null, limit: null}
-      // console.log('jLimit : '+chalk.blue(JSON.stringify(jLimit)))
+      // console.log('jLimit : '+chalk.blue(util.jsonToText(jLimit)))
       if(Object.keys(req.query).length !=0){
         cmd = 'chkPageCount'
         // console.log(chalk.green('=========== NOT NUll ==========='))
@@ -938,12 +1028,12 @@ const contract = {
           jLimit.limit = parseInt(req.query.count)
         }else{
           logger.info(req,cmd+'|page or count is wrong format')
-          return resp.getIncompleteParameter(req,res,cmd)
+          resp.getIncompleteParameter(req,res,cmd)
           // console.log(chalk.green('=========== Invalid ==========='))
-          // return res.json(resp.getJsonError(error.code_00005,error.desc_00005))
+          // res.json(resp.getJsonError(error.code_00005,error.desc_00005))
         }
       }
-      logger.info(req,cmd+'|'+JSON.stringify(jLimit))
+      logger.info(req,cmd+'|'+util.jsonToText(jLimit))
 
       cmd = 'chkRequestBody'
       if(util.isDataFound(req.body)){
@@ -951,7 +1041,7 @@ const contract = {
         cmd = 'genContractCriteria'
         if(util.isDataFound(req.body.requestData.contractCriteria)){
           logger.info(req,cmd+'|selected Contract')
-          jWhere = JSON.parse(JSON.stringify(req.body.requestData.contractCriteria))
+          jWhere = JSON.parse(util.jsonToText(req.body.requestData.contractCriteria))
         }else{
           logger.info(req,cmd+'|default Contract with no criteria')
         }
@@ -965,7 +1055,7 @@ const contract = {
         cmd = 'chkPaymentCriteria'
         if(util.isDataFound(req.body.requestData.contractPaymentCriteria)){
           logger.info(req,cmd+'|selected Payment')
-          criteria = JSON.parse(JSON.stringify(req.body.requestData.contractPaymentCriteria))
+          criteria = JSON.parse(util.jsonToText(req.body.requestData.contractPaymentCriteria))
         }else{
           logger.info(req,cmd+'|default Payment with no criteria')
         }
@@ -977,7 +1067,7 @@ const contract = {
         criteria = {}
         if(util.isDataFound(req.body.requestData.documentCriteria)){
           logger.info(req,cmd+'|selected Document')
-          criteria = JSON.parse(JSON.stringify(req.body.requestData.documentCriteria))
+          criteria = JSON.parse(util.jsonToText(req.body.requestData.documentCriteria))
         }else{
           logger.info(req,cmd+'|default Document with no criteria')
         }
@@ -989,11 +1079,11 @@ const contract = {
         criteria = {}
         if(util.isDataFound(req.body.requestData.contractVendorAgentCriteria)){
           logger.info(req,cmd+'|selected Agent')
-          criteria = JSON.parse(JSON.stringify(req.body.requestData.contractVendorAgentCriteria))
+          criteria = JSON.parse(util.jsonToText(req.body.requestData.contractVendorAgentCriteria))
         }else{
           logger.info(req,cmd+'|default Agent with no criteria')
         }
-        if(JSON.stringify(criteria.attributes)!='[]'){ //Error if not check => Cannot set property 'contractVendorAgent' of undefined
+        if(util.jsonToText(criteria.attributes)!='[]'){ //Error if not check => Cannot set property 'contractVendorAgent' of undefined
           criteria.through={model:mContractAgent, as:cst.models.agent, attributes:[]}
           criteria.model=mVendorContact
           criteria.as=cst.models.contractAgents
@@ -1007,17 +1097,17 @@ const contract = {
           logger.info(req,cmd+'|selected Vender')
           if(util.isDataFound(req.body.requestData.vendorCriteria.contactCriteria)){
             logger.info(req,cmd+'|selected Contact')
-            childCriteria = JSON.parse(JSON.stringify(req.body.requestData.vendorCriteria.contactCriteria))
+            childCriteria = JSON.parse(util.jsonToText(req.body.requestData.vendorCriteria.contactCriteria))
           }
           
           delete req.body.requestData.vendorCriteria.contactCriteria
-          criteria = JSON.parse(JSON.stringify(req.body.requestData.vendorCriteria))
+          criteria = JSON.parse(util.jsonToText(req.body.requestData.vendorCriteria))
         }else{
           logger.info(req,cmd+'|default Vender with no criteria')
         }
         criteria.model=mVendorProfile
         criteria.as=cst.models.vendorProfile
-        if(JSON.stringify(criteria.attributes)!='[]'){ //Error if not check => Cannot set property 'vendorContactList' of undefined
+        if(util.jsonToText(criteria.attributes)!='[]'){ //Error if not check => Cannot set property 'vendorContactList' of undefined
           childCriteria.model=mVendorContact
           childCriteria.as=cst.models.vendorContacts
           criteria.include=childCriteria
@@ -1033,14 +1123,14 @@ const contract = {
           logger.info(req,cmd+'|selected Location')
           if(util.isDataFound(req.body.requestData.locationCriteria.areaCriteria)){
             logger.info(req,cmd+'|selected Area')
-            childCriteria = JSON.parse(JSON.stringify(req.body.requestData.locationCriteria.areaCriteria))
+            childCriteria = JSON.parse(util.jsonToText(req.body.requestData.locationCriteria.areaCriteria))
           }
           delete req.body.requestData.locationCriteria.areaCriteria
-          criteria = JSON.parse(JSON.stringify(req.body.requestData.locationCriteria))
+          criteria = JSON.parse(util.jsonToText(req.body.requestData.locationCriteria))
         }else{
           logger.info(req,cmd+'|default Location with no criteria')
         }
-        if(JSON.stringify(criteria.attributes)!='[]'){
+        if(util.jsonToText(criteria.attributes)!='[]'){
           criteria.through={model:mArea, as:cst.models.area, attributes:[]}
           criteria.model=mLocation
           criteria.as=cst.models.locations
@@ -1057,7 +1147,7 @@ const contract = {
 
 
         cmd = 'jWhere'
-        logger.info(req,cmd+'|searchOptions:'+jsUtil.inspect(jWhere, {showHidden: false, depth: null}))
+        logger.info(req,cmd+'|searchOptions:'+util.jsonToText(jWhere))
         cmd = 'findContracts'
         // mContract.findAndCountAll({include:[
         //   {model: mVendorProfile, as: 'vendorProfile', where:{vendorName1:'SC Asset'},
@@ -1077,8 +1167,8 @@ const contract = {
         mContract.findAndCountAll(jWhere)
         .then((db) => {
           cmd = 'chkContractData'
-          logger.query(req,cmd+'|'+JSON.stringify(db))
-          if(db.count>0) return resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"contractList":db.rows})
+          logger.query(req,cmd+'|'+util.jsonToText(db))
+          if(db.count>0) resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"contractList":db.rows})
           else{
             logger.summary(req,cmd+'|Not Found Contract')
             res.json(resp.getJsonError(error.code_01003,error.desc_01003,db))
@@ -1091,11 +1181,11 @@ const contract = {
 
       }else{
         logger.info(req,cmd+'|Not Found requestData|')
-        return resp.getIncompleteParameter(req,res,cmd)
+        resp.getIncompleteParameter(req,res,cmd)
       }
     }catch(err){
       logger.error(req,cmd+'|'+err)
-      return resp.getInternalError(req,res,cmd,err)
+      resp.getInternalError(req,res,cmd,err)
     }
   }
 
