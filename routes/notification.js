@@ -62,7 +62,7 @@ GROUP BY ur.UR_STATUS
       if(cst.userGroup.admin.indexOf(decoded.userType)>=0){
         rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
-        + "WHERE ur.UR_ID = urw.UR_ID AND (ur.UR_STATUS='" + cst.status.dmApproved + "' OR (urw.UPDATE_BY='" + decoded.userName
+        + "WHERE (ur.UR_ID = urw.UR_ID AND ur.ur_status = urw.ur_status) AND (ur.UR_STATUS='" + cst.status.dmApproved + "' OR (urw.UPDATE_BY='" + decoded.userName
         + "' AND (urw.UR_STATUS='" + cst.status.adminAccept + "' or urw.UR_STATUS='" + cst.status.complete + "'))) GROUP BY ur.UR_STATUS;")
       }else if(cst.userGroup.manager.indexOf(decoded.userType)>=0){
         rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "

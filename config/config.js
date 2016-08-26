@@ -4,6 +4,7 @@ const config = module.exports = {}
 const fs = require('fs')
 const Sequelize = require('sequelize')
 const nodemailer = require('nodemailer')
+const ip = require("ip");
 
 config.hostname = process.env.HOST || process.env.HOSTNAME
 
@@ -57,7 +58,7 @@ config.regDigit = /^[0-9]+$/
 config.devMsg = true //Response devMsg when error
 
 // Department for workflow
-config.adminDepartment = 'Admin Department'
+config.adminDepartment = 'Admin Team'
 
 // OM
 config.om = {}
@@ -91,3 +92,14 @@ config.email.options = {
     // subject: 'BMS :: User-Request ที่ยังไม่ได้รับการดำเนินการ' // Subject line
     html: fs.createReadStream('./config/content.html') // html body
 }
+
+// Archiving
+config.archiving = {}
+config.archiving.authenURL = "http://10.252.176.40:8002/services/ais_archive/get_s3_token"
+config.archiving.downloadURL = "http://10.252.176.40:8001/dj/en-us/ais_archive/tempcache/"
+config.archiving.objectURL = "https://10.252.161.38:8082/SOSD/SOSD/"
+config.archiving.username = "devuser4"
+config.archiving.password = "DevUser4!@#"
+config.archiving.expireToken = "900" //second
+config.archiving.clientIP = ip.address()
+//config.archiving.clientIP = "127.0.0.1"

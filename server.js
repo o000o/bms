@@ -14,6 +14,7 @@ const util = require('./utils/bmsUtils')
 // const mlogger = require('morgan')
 // const https = require('https')
 const moment = require('moment-timezone')
+const document = require('./routes/document.js');
 const app = express()
 
 // app.use(mlogger('dev'))
@@ -55,7 +56,11 @@ app.post('/bms/login/user', auth.login)
 // Only the requests that start with /api/v1/* will be checked for the token.
 // Any URL's that do not follow the below pattern should be avoided unless you
 // are sure that authentication is not needed
-// app.all('/bms/*', [require('./middlewares/validateRequest')])
+app.all('/bms/*', [require('./middlewares/validateRequest')])
+
+//Bypass Intercept
+app.get('/bms/document/download/:fileName', document.download)
+
 // Add the interceptor middleware for renew token
 app.use('/bms/*', [require('./middlewares/interceptResponse')])
 app.use('/bms/', require('./routes'))

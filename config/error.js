@@ -63,6 +63,14 @@ error.desc_01018 = 'Contract, Lodation update and Area insert unsuccess'
 error.code_01019 = '01019'
 error.desc_01019 = 'Location update and Area insert unsuccess'
 
+// Error Code Archiving
+error.code_02001 = '02001'
+error.desc_02001 = 'Archiving error.'
+error.code_02002 = '02002'
+error.desc_02002 = 'Archiving authen error.'
+error.code_02003 = '02003'
+error.desc_02003 = 'Archiving download error.'
+
 // Error Code OM
 error.code_03001 = '03001'
 error.desc_03001 = 'OM error.'

@@ -11,6 +11,8 @@ const userRequest = require('./userRequest.js');
 const notification = require('./notification.js')
 const userManagement = require('./userManagement.js');
 const Insurance = require('./Insurance.js');
+const assignLocation = require('./assignLocation.js');
+const document = require('./document.js');
 
 // ============================================================================
 // Login
@@ -78,5 +80,15 @@ router.post('/Insurance', Insurance.add);
 //router.post('/Insurance', Insurance.queryByCriteria);
 //router.put('/Insurance', Insurance.edit);
 //router.delete('/Insurance/:insuranceNo', Insurance.delete);
+
+// ============================================================================
+// Assign location
+// ============================================================================
+router.post('/assignLocation', assignLocation.add);
+
+// ============================================================================
+// Document
+// ============================================================================
+router.get('/document/download/:fileName', document.download);
 
 module.exports = router;
