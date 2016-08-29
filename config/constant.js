@@ -14,6 +14,14 @@ constant.status.editContractComplete = "EDITED_CONTRACT"
 constant.status.editContractWait = "W_EDIT_CONTRACT"
 // constant.status.renewContract = "W_RENEW_CONTRACT"
 // constant.status.cancelContract = "W_CANCEL_CONTRACT"
+constant.status.wDmApprovalTh = 'รอการอนุมัติ'
+constant.status.dmApprovedTh = 'รอดำเนินการต่อ'
+constant.status.dmRejectedTh = 'ไม่ผ่านการอนุมัติ'
+constant.status.adminRejectedTh = 'ไม่ผ่านการอนุมัติ'
+constant.status.adminAcceptTh = "ADMIN_ACCEPT"
+constant.status.completeTh = 'ดำเนินการสำเร็จแล้ว'
+constant.status.editContractCompleteTh = "EDITED_CONTRACT"
+constant.status.editContractWaitTh = "W_EDIT_CONTRACT"
 
 constant.urType = {}
 constant.urType.editContract = "EDIT_CONTRACT"
@@ -21,6 +29,11 @@ constant.urType.renewContract = "RENEW_CONTRACT"
 constant.urType.cancelContract = "CANCEL_CONTRACT"
 constant.urType.rental = "RENTAL"
 constant.urType.move = "MOVEMENT"
+constant.urType.editContractTh = 'ขอแก้ไขสัญญา'
+constant.urType.renewContractTh = 'ขอต่อสัญญา'
+constant.urType.cancelContractTh = 'ขอยกเลิกสัญญา'
+constant.urType.rentalTh = 'ขอใช้สถานที่'
+constant.urType.moveTh = 'ขอเปลี่ยนสถานที่'
 
 //notification group
 constant.notification = {}
@@ -55,4 +68,5 @@ constant.models.area = "area"
 constant.models.contractAgents = "contractVendorAgentList"
 constant.models.agent = "contractVendorAgent"
 constant.models.location = "buildingLocation"
-// constant.models.locationArea = "buildingArea"
+constant.models.urs = "userRequestList"
+constant.models.movements = "movementtList"

@@ -11,10 +11,10 @@ var transporter = nodemailer.createTransport({
 // setup e-mail data with unicode symbols
 
 var htmlstream = fs.createReadStream('./config/content.html');
-htmlstream = htmlstream.pipe(replaceStream('{$urId}','ooo')).pipe(process.stdout)
+htmlstream = htmlstream.pipe(replaceStream('{$urId}','ooo'))//.pipe(process.stdout)
 var mailOptions = {
     from: 'bms_dev@corp.ais900dev.org', // sender address
-    to: 'kittilau@corp.ais900dev.org', // list of receivers
+    to: 'kittilau@corp.ais900dev.org;siripoko@corp.ais900dev.org;', // list of receivers
     // to: 'siripoko@corp.ais900dev.org',
     subject: 'BMS :: User-Request ที่ยังไม่ได้รับการดำเนินการ', // Subject line
     html: htmlstream // html body
@@ -27,3 +27,10 @@ transporter.sendMail(mailOptions, function(error, info){
     }
     console.log('Message sent: ' + info.response);
 });
+
+/*************************
+Message sent: {"accepted":["kittilau@corp.ais900dev.org"],"rejected":[],
+"response":"250 2.6.0 <befa6ae9-a188-e5bb-e096-d195e6e8e55b@corp.ais900dev.org> [InternalId=27927] 
+Queued mail for delivery","envelope":{"from":"bms_dev@corp.ais900dev.org",
+"to":["kittilau@corp.ais900dev.org"]},"messageId":"befa6ae9-a188-e5bb-e096-d195e6e8e55b@corp.ais900dev.org"}
+*************************/

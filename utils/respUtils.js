@@ -3,7 +3,7 @@ const error = require('../config/error')
 const logger = require('./logUtils')
 const cfg = require('../config/config')
 
-exports.getJsonError = (errCode, errMsg, devMsg) => {
+exports.getJsonError = (errCode, errMsg, devMsg,userMsg) => {
 	if(cfg.devMsg){
 		if(devMsg!=null && devMsg.message) devMsg=devMsg.message
 		return {responseStatus:{responseCode:errCode, responseMessage:errMsg}, devMessage:devMsg}

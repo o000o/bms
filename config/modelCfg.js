@@ -37,7 +37,7 @@ mCfg.sequelize = new Sequelize(cfg.dbName, cfg.dbUser, cfg.dbPwd, {
 	pool: {
 		max: cfg.poolMax,
 		min: 0,
-		idle: 10000,
+		idle: 30000,
 	}
 })
 

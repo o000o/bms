@@ -4,6 +4,7 @@ const mCfg = require('../config/modelCfg')
 const cst = require('../config/constant')
 const mBuildingArea = require('./mBuildingArea')
 const mBuildingDetail = require('./mBuildingDetail')
+const mMovement = require('./mMovement')
 
 const mBuildingLocation = mCfg.sequelize.define('building_location', {
 	buildingId: { type: Sequelize.INTEGER, field: 'building_id', primaryKey: true, autoIncrement: true, allowNull: false},
@@ -24,5 +25,7 @@ const mBuildingLocation = mCfg.sequelize.define('building_location', {
 mBuildingLocation.hasMany(mBuildingArea, {as:cst.models.locationAreas,foreignKey:'buildingId',targetKey:'buildingId'})
 mBuildingArea.hasMany(mBuildingDetail, {as:cst.models.areaDetails,foreignKey:'buildingAreaId',targetKey:'buildingAreaId'})
 mBuildingArea.belongsTo(mBuildingLocation, {as:cst.models.location, foreignKey:'buildingId', targetKey:'buildingId'})
+
+mBuildingArea.hasMany(mMovement, {as:cst.models.movements,foreignKey:'buildingAreaId',targetKey:'buildingAreaId'})
 
 module.exports = mBuildingLocation

@@ -81,44 +81,50 @@ exports.sendEmail=(to,ur,cb) => {
     switch(ur.urStatus){
       case cst.status.wDmApproval: //email Manager
         cfg.email.options.subject = cfg.email.subject.wManagerApprove
-        urStatus = 'รอการอนุมัติ'
+        urStatus = cst.status.wDmApprovalTh
         break
       case cst.status.dmApproved: //email Admin
         cfg.email.options.subject = cfg.email.subject.wAdminApprove
-        urStatus = 'รอดำเนินการต่อ'
+        urStatus = cst.status.dmApprovedTh
         break
       case cst.status.dmRejected: //email User
         cfg.email.options.subject = cfg.email.subject.managerReject
-        urStatus = 'ไม่ผ่านการอนุมัติ'
+        urStatus = cst.status.dmRejectedTh
         break
       case cst.status.adminRejected: //email User & Manager
         cfg.email.options.subject = cfg.email.subject.adminReject
-        urStatus = 'ไม่ผ่านการอนุมัติ'
+        urStatus = cst.status.adminRejectedTh
         break
       case cst.status.complete: //email User & Manager
         cfg.email.options.subject = cfg.email.subject.urComplete
-        urStatus = 'ดำเนินการสำเร็จแล้ว'
+        urStatus = cst.status.completeTh
+        break
+      default:
+        cfg.email.options.subject = cfg.email.subject.default
         break
     }
 
     switch(ur.urType){
       case cst.urType.editContract: //email Manager
-        urType = 'ขอแก้ไขสัญญา'
+        urType = cst.urType.editContractTh
         break
       case cst.urType.renewContract: //email Admin
-        urType = 'ขอต่อสัญญา'
+        urType = cst.urType.renewContractTh
         break
       case cst.urType.cancelContract: //email User
-        urType = 'ขอยกเลิกสัญญา'
+        urType = cst.urType.cancelContractTh
         break
       case cst.urType.rental: //email User & Manager
-        urType = 'ขอใช้สถานที่'
+        urType = cst.urType.rentalTh
         break
       case cst.urType.move: //email User & Manager
-        urType = 'ขอเปลี่ยนสถานที่'
+        urType = cst.urType.moveTh
         break
     }
+
     if(!util.isDataFound(cfg.email.options.to)) cfg.email.options.to = to //set who to send email to
+    logger.debug(null,'notifyEmail|To:'+cfg.email.options.to)
+    jErr.to=cfg.email.options.to
     //replace content variable
     cfg.email.options.html = cfg.email.options.html
       .pipe(replaceStream('{$urId}',ur.urId))

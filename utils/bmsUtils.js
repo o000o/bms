@@ -7,13 +7,17 @@ const jwt = require('jwt-simple')
 const util = require('util')
 
 const utils = {
-	jsonToText: (object) => { //not use
+	jsonToText: (object) => {
 		try{
 			return JSON.stringify(object)
 		}catch(err){
 			logger.debug(null,'bmsUtils|jsonToText|'+err)
 			return util.inspect(object, {showHidden: false, depth: null})
 		}
+	},
+
+	inspect: (object) => {
+		return util.inspect(object, {showHidden: false, depth: null})
 	},
 
 	isDataFound: (resObj) => {

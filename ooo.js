@@ -3,10 +3,30 @@ const chalk = require('chalk')
 const util = require('./utils/bmsUtils')
 const jwt = require('jwt-simple')
 const cfg = require('./config/config')
-
+const async = require('async')
         try{
-console.log(chalk.green(util.jsonToText(cfg.email.options.html)))
-
+            async.waterfall([
+              (callback)=>{ //query UR
+                // code a
+                callback(null, 'a', 'b')
+              },
+              (arg1, arg2, callback)=>{ //gen To
+                // arg1 is equals 'a' and arg2 is 'b'
+                // Code c
+                callback(null, '{$userEmail}')
+              },
+              (arg1, callback)=>{ //Send Email
+                // arg1 is 'c'
+                // code d
+                if(arg1){ 
+                    arg1 = arg1.replace('{$userEmail}', "ooonaja")
+                    callback(null, arg1);
+                }else callback('error',null)
+              }], (err, result)=>{
+               // result is 'd'    
+               console.log(chalk.green(err+':'+result))
+              }
+            )
 
         // let newBody = {}
         //     // const decoded = jwt.decode(

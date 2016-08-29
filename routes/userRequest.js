@@ -3,7 +3,6 @@
 const resp = require('../utils/respUtils')
 const util = require('../utils/bmsUtils')
 const ext = require('../utils/externalService')
-// const jsUtil = require('util')
 const logger = require('../utils/logUtils')
 const error = require('../config/error')
 const cst = require('../config/constant')
@@ -11,39 +10,199 @@ const mUR = require('../models/mUR')
 const mUrWf = require('../models/mUrWorkFlow')
 const mUser = require('../models/mUser')
 const cfg = require('../config/config')
-// const soap = require('soap-ntlm-2')
-// const parser = require('xml2js').Parser()
+const async = require('async')
 
 const userRequest = {
 
   updateStatus: (req, res) => {
     let cmd = 'updateStatusUr'
     try{
-      // logger.info(req,cmd+'|'+util.jsonToText(req.body.requestData))
-      cmd = 'createWorkflow'
-      mUrWf.create(req.body.requestData).then((succeed) => {
-        logger.info(req,cmd+'|AddedWorkflow:'+util.jsonToText(succeed))
-        const jWhere = {urId:req.body.requestData.urId}
-        delete req.body.requestData.urId
-        delete req.body.requestData.updateBy
-        cmd = 'updateUR'
-        logger.info(req,cmd+'|where:'+util.jsonToText(jWhere)+'|set:'+util.jsonToText(req.body.requestData))
-        mUR.update(req.body.requestData,{where:jWhere}).then((succeed) => {
-          logger.info(req,cmd+'|updated '+ succeed +' records')
-          return resp.getSuccess(req,res,cmd)
-        }).catch((err) => {
-          logger.error(req,cmd+'|Error while update UR|'+err)
-          logger.summary(req,cmd+'|'+error.desc_01001)
-          res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-        })
-      }).catch((err) => {
-        logger.error(req,cmd+'|Error when create mUrWf|'+err)
-        logger.summary(req,cmd+'|'+error.desc_01001)
-        res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-      })
+      // insert workflow => update urStatus => send email
+      cmd = 'startSeries'
+      async.series([
+        (callback)=>{ // config.adminDepartment = 'Admin Team' (front send this)
+          cmd = 'createWorkflow'
+          mUrWf.create(req.body.requestData).then((succeed) => {
+            logger.info(req,cmd+'|AddedWorkflow:'+util.jsonToText(succeed))
+            callback(null, succeed)
+          }).catch((dberr) => {
+            logger.error(req,cmd+'|Error when create mUrWf|'+dberr)
+            logger.summary(req,cmd+'|'+error.desc_01001)
+            callback(dberr,'Error when create mUrWf')
+          })
+        },
+        (callback)=>{
+          cmd = 'setUrData'
+          let jWhere = {urId:req.body.requestData.urId}
+          let upStatus = {urStatus:req.body.requestData.urStatus}
+          cmd = 'updateUR'
+          logger.debug(req,cmd+'|where:'+util.jsonToText(jWhere)+'|set:'+util.jsonToText(upStatus))
+          mUR.update(upStatus,{where:jWhere}).then((succeed) => {
+            let updated = 'UR updated '+ succeed +' rows'
+            logger.info(req,cmd+'|'+updated)
+            if(succeed>0) callback(null, updated)
+            else callback('No row update', updated)
+          }).catch((dberr) => {
+            logger.error(req,cmd+'|Error while update UR|'+dberr)
+            logger.summary(req,cmd+'|'+error.desc_01001)
+            callback(dberr,'Error while update UR')
+          })
+        },
+        (callback)=>{
+      //manager approve => email admin <= query all admin in user for email and send them all
+      //manager reject => email user <= email in UR
+      //admin reject => email user & manager <= email in UR & user <= search manager from workflow
+      //admin accept => don't email
+      //admin complete => email user & manager <= email in UR & user <= search manager from workflow
+          let wcmd = 'chkIfEmailNotification'
+          logger.info(req,'notifyEmail|'+cfg.email.notify)
+          if(cfg.email.notify){ //Send Email?
+            wcmd = 'startWaterfall'
+            async.waterfall([
+              (wcallback)=>{ //gen To
+                wcmd = 'chkUrStatus' //to know who to send email to
+                switch(req.body.requestData.urStatus){
+                  case cst.status.dmApproved: //email Admin group query user_management
+                    //search all admin emails from users table
+                    wcmd = 'findAdminEmails'
+                    mUser.findAll({where:{userType:cst.userType.centerAdmin},attributes:['email']})
+                    .then((emails) => {
+                      logger.debug(req,wcmd+'|'+util.jsonToText(emails))
+                      if(util.isDataFound(emails)){
+                        wcmd = 'genEmailTo'
+                        let to = ''
+                        emails.forEach((value) => {if(util.isDataFound(value.email)) to=to+value.email+';'})
+                        wcallback(null, to)
+                      }else wcallback('Emails Not Found', null)
+                    }).catch((werr) => {
+                      logger.error(req,wcmd+'|'+werr)
+                      wcallback(werr,null)
+                    })
+                    break
+                  case cst.status.dmRejected: //email User query UR
+                    wcmd = 'genEmailTo'
+                    wcallback(null, '{$userEmail}') //replace after query UR
+                    break
+                  case cst.status.adminRejected: //email User & Manager
+                  case cst.status.complete: //email User & Manager
+                    let to = '{$userEmail};' //replace after query UR
+                    wcmd = 'findManagerName'
+                    mUrWf.findOne({attributes:['updateBy'],
+                      where:{urId:req.body.requestData.urId,urStatus:cst.status.dmApproved}
+                    }).then((updateBy) => {
+                      logger.debug(req,wcmd+'|'+util.jsonToText(updateBy))
+                      if(util.isDataFound(updateBy)){
+                        wcmd = 'findManagerEmail'
+                        mUser.findOne({where:{userName:updateBy.updateBy},attributes:['email']})
+                        .then((email) => {
+                          logger.debug(req,wcmd+'|'+util.jsonToText(email))
+                          if(util.isDataFound(email.email)){
+                            wcmd = 'genEmailTo'
+                            to = to+email.email
+                            wcallback(null,to)
+                          }else{
+                            logger.info(req,wcmd+'|Email Not Found')
+                            wcallback(null,to)
+                          }
+                        }).catch((werr) => { // can't find manager send email to user only
+                          logger.error(req,wcmd+'|'+werr)
+                          wcallback(null,to)
+                        })
+                      }else{
+                        logger.info(req,wcmd+'|Manager Not Found')
+                        wcallback(null,to)
+                      }
+                    }).catch((werr) => { // can't find manager send email to user only
+                      logger.error(req,wcmd+'|'+werr)
+                      wcallback(null,to)
+                    })
+                    break
+                }
+              },
+              (to,wcallback)=>{ //query UR
+                wcmd = 'chkTo'
+                if(to){ //check if we have email to send
+                  wcmd = 'findUR'
+                  let jWhere = {urId:req.body.requestData.urId}
+                  logger.debug(req,wcmd+'|'+util.jsonToText(jWhere))
+                  mUR.findOne({where:jWhere}).then((db) => {
+                    logger.debug(req,wcmd+'|'+util.jsonToText(db))
+                    wcmd = 'chkUrReturn'
+                    if(util.isDataFound(db)){
+                      wcmd = 'replaceUserEmail'
+                      to = to.replace('{$userEmail}', db.userEmail)
+                      logger.debug(req,wcmd+'|'+to)
+                      wcallback(null,to,db)
+                    }else{
+                      wcallback('UR Not Found',null)
+                    }
+                    // resp.getSuccess(req,res,cmd)
+                  }).catch((werr) => {
+                    logger.error(req,wcmd+'|Query UR Error|'+werr)
+                    wcallback(werr,null)
+                  })
+                }else{ // No one to send email
+                  logger.info(req,wcmd+'|Not found email to send')
+                  wcallback('Not found email to send',null)
+                }
+              },
+
+              (to,ur,wcallback)=>{ //Send Email
+                wcmd = 'sendEmail'
+                logger.info(req,wcmd+'|To:'+to) // Remove after use test email
+                logger.debug(req,wcmd+'|To:'+to+'|UR:'+util.jsonToText(ur))
+                ext.sendEmail(to,ur,(eresult)=>{
+                  logger.info(req,'notifyEmail|'+util.jsonToText(eresult))
+                  wcallback(null,eresult)
+                })
+              }], (werr, wresult)=>{
+                if(werr){ // email not sent
+                  callback(null,'Did not email notification:'+werr)
+                }else{ // email sent
+                  callback(null,wresult)
+                }
+              }
+            )
+          }else callback(null,'notifyEmail:'+cfg.email.notify)
+        }],
+        // optional callback
+        (err, results)=>{
+          // final callback code
+          if(err) {
+            let errRes = {Error:util.inspect(err), Results:results}
+            res.json(resp.getJsonError(error.code_01001,error.desc_01001,errRes))
+          }
+          else resp.getSuccess(req,res,cmd,results)
+        }
+      )
+
+
+//***********Old Flow**************
+      // cmd = 'createWorkflow'
+      // mUrWf.create(req.body.requestData).then((succeed) => {
+      //   logger.info(req,cmd+'|AddedWorkflow:'+util.jsonToText(succeed))
+      //   const jWhere = {urId:req.body.requestData.urId}
+      //   delete req.body.requestData.urId
+      //   delete req.body.requestData.updateBy
+      //   cmd = 'updateUR'
+      //   logger.info(req,cmd+'|where:'+util.jsonToText(jWhere)+'|set:'+util.jsonToText(req.body.requestData))
+      //   mUR.update(req.body.requestData,{where:jWhere}).then((succeed) => {
+      //     logger.info(req,cmd+'|updated '+ succeed +' records')
+      //     resp.getSuccess(req,res,cmd)
+      //   }).catch((err) => {
+      //     logger.error(req,cmd+'|Error while update UR|'+err)
+      //     logger.summary(req,cmd+'|'+error.desc_01001)
+      //     res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+      //   })
+      // }).catch((err) => {
+      //   logger.error(req,cmd+'|Error when create mUrWf|'+err)
+      //   logger.summary(req,cmd+'|'+error.desc_01001)
+      //   res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+      // })
+//***********Old Flow**************
     }catch(err){
       logger.error(req,cmd+'|'+err)
-      return resp.getInternalError(req,res,cmd,err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 
@@ -72,11 +231,12 @@ const userRequest = {
             break
           case cst.urType.editContract://no need to add workflow just insert UR
             if(userRight){
+              userRight = 0
               cmd = 'createEditContractUR'
               if(util.isDataFound(req.body.requestData.contractId)){
                 mUR.create(req.body.requestData).then((succeed) => {
                   logger.info(req,cmd+'|'+util.jsonToText(succeed))
-                  return resp.getSuccess(req,res,cmd,succeed)
+                  resp.getSuccess(req,res,cmd,succeed)
                 }).catch((err) =>{
                   logger.error(req,cmd+'|'+err)
                   logger.summary(req,cmd+'|'+error.desc_01001)
@@ -85,14 +245,15 @@ const userRequest = {
               }else{
                 let err ='No contractId not add editContract UR'
                 logger.info(req,cmd+'|'+err)
-                return resp.getIncompleteParameter(req,res,cmd,err)
+                resp.getIncompleteParameter(req,res,cmd,err)
               }
               break
             }
           default: // response incomplete parameter if no urType match
+            userRight = 0
             let err ='user has No Right or urType not match'
             logger.info(req,cmd+'|'+err)
-            return resp.getIncompleteParameter(req,res,cmd,err)
+            resp.getIncompleteParameter(req,res,cmd,err)
             break
         }
 
@@ -104,7 +265,7 @@ const userRequest = {
               // logger.error(req,cmd+'|'+util.inspect(err))
               logger.error(req,cmd+'|'+util.jsonToText(err))
               logger.summary(req,cmd+'|'+err.desc)
-              return res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+              res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
             }else{
               logger.info(req,cmd+'|OM result:'+util.jsonToText(result))
               upUser.userName = result.managerUser
@@ -149,7 +310,7 @@ const userRequest = {
                     logger.info(req,'notifyEmail|'+util.jsonToText(result))
                   })
                 }
-                return resp.getSuccess(req,res,cmd,succeed)
+                resp.getSuccess(req,res,cmd,succeed)
               }).catch((err) => {
                 logger.error(req,cmd+'|'+err)
                 logger.summary(req,cmd+'|'+error.desc_01001)
@@ -160,11 +321,11 @@ const userRequest = {
       }else{
         let err ='No urType or urStatus'
         logger.info(req,cmd+'|'+err)
-        return resp.getIncompleteParameter(req,res,cmd,err)
+        resp.getIncompleteParameter(req,res,cmd,err)
       }
     }catch(err){
       logger.error(req,cmd+'|'+err)
-      return resp.getInternalError(req,res,cmd,err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 
@@ -178,7 +339,7 @@ const userRequest = {
       logger.info(req,cmd+'|where:'+util.jsonToText(jWhere)+'|set:'+util.jsonToText(req.body.requestData))
       mUR.update(req.body.requestData,{where:jWhere}).then((succeed) => {
         logger.info(req,cmd+'|updated '+ succeed +' records')
-        if(succeed>0) return resp.getSuccess(req,res,cmd)
+        if(succeed>0) resp.getSuccess(req,res,cmd)
         else{
           logger.summary(req,cmd+'|'+error.desc_01001)
           res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
@@ -190,7 +351,7 @@ const userRequest = {
       })
     }catch(err){
       logger.error(req,cmd+'|'+err)
-      return resp.getInternalError(req,res,cmd,err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 
@@ -202,7 +363,7 @@ const userRequest = {
       cmd = 'destroyUR'
       mUR.destroy({where:jWhere}).then((succeed) => {
         logger.info(req,cmd+'|deleted '+ succeed +' records')
-        return resp.getSuccess(req,res,cmd)
+        resp.getSuccess(req,res,cmd)
       }).catch((err) => {
         logger.error(req,cmd+'|Error while delete UR|'+err)
         logger.summary(req,cmd+'|'+error.desc_01001)
@@ -210,7 +371,7 @@ const userRequest = {
       })
     }catch(err){
       logger.error(req,cmd+'|'+err)
-      return resp.getInternalError(req,res,cmd,err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 
@@ -225,7 +386,7 @@ const userRequest = {
           jLimit.limit = parseInt(req.query.count)
         }else{
           logger.info(req,cmd+'|page or count is wrong format')
-          return resp.getIncompleteParameter(req,res,cmd)
+          resp.getIncompleteParameter(req,res,cmd)
         }
       }
       logger.info(req,cmd+'|'+util.jsonToText(jLimit))
@@ -233,7 +394,7 @@ const userRequest = {
       mUR.findAndCountAll(jLimit).then((db) => {
         cmd = 'chkUrData'
         logger.query(req,cmd+'|'+util.jsonToText(db))
-        if(db.count>0) return resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"userRequestList":db.rows})
+        if(db.count>0) resp.getSuccess(req,res,cmd,{"totalRecord":db.count,"userRequestList":db.rows})
         else{
           logger.summary(req,cmd+'|Not Found UR')
           res.json(resp.getJsonError(error.code_01003,error.desc_01003,db))
@@ -245,7 +406,7 @@ const userRequest = {
       })
     }catch(err){
       logger.error(req,cmd+'|'+err)
-      return resp.getInternalError(req,res,cmd,err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 
@@ -309,7 +470,7 @@ const userRequest = {
           logger.query(req,cmd+'|'+util.jsonToText(db))
           if(util.isDataFound(db)){
             logger.info(req,cmd+'|Found UR')
-            return resp.getSuccess(req,res,cmd,{"userRequestList":db})
+            resp.getSuccess(req,res,cmd,{"userRequestList":db})
           }else{
             logger.summary(req,cmd+'|Not Found UR')
             res.json(resp.getJsonError(error.code_01003,error.desc_01003,db))
@@ -321,11 +482,11 @@ const userRequest = {
         })
       }else{
         logger.info(req,cmd+'|Not Found requestData|')
-        return resp.getIncompleteParameter(req,res,cmd)
+        resp.getIncompleteParameter(req,res,cmd)
       }
     }catch(err){
       logger.error(req,cmd+'|'+err)
-      return resp.getInternalError(req,res,cmd,err)
+      resp.getInternalError(req,res,cmd,err)
     }
   },
 
@@ -343,12 +504,12 @@ const userRequest = {
           logger.info(req,cmd+'|Found UR')
           cmd = 'chk urWorkflowList'
           if(util.isDataFound(db.urWorkflowList)){
-            return resp.getSuccess(req,res,cmd,db)
+            resp.getSuccess(req,res,cmd,db)
           }else{
             logger.info(req,cmd+'|Not Found UrWorkflow|Delete Empty List')
             let dbClone = JSON.parse(util.jsonToText(db))
             delete dbClone.urWorkflowList
-            return resp.getSuccess(req,res,cmd,dbClone)
+            resp.getSuccess(req,res,cmd,dbClone)
           }
         }else{
           logger.summary(req,cmd+'|Not Found UR')
@@ -361,7 +522,7 @@ const userRequest = {
       })
     }catch(err){
       logger.error(req,cmd+'|'+err)
-      return resp.getInternalError(req,res,cmd,err)
+      resp.getInternalError(req,res,cmd,err)
     }
   }
 

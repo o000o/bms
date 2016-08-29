@@ -13,7 +13,7 @@ const mUR = mCfg.sequelize.define('user_request', {
 	urType: {type: Sequelize.STRING, field: 'ur_type', allowNull: false},
 	company: {type: Sequelize.STRING, allowNull: true },
 	department: {type: Sequelize.STRING, allowNull: true },
-	urDetail: {type: Sequelize.STRING, field: 'ur_detail', allowNull: false },
+	urDetail: {type: Sequelize.STRING, field: 'ur_detail', allowNull: true },
 	expectDate: {type: Sequelize.DATEONLY, field: 'expect_date', allowNull: true//, 
 		//get: function()  {return mCfg.correctTime(this.getDataValue('expectDate'))}
 	},

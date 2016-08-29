@@ -56,7 +56,7 @@ app.post('/bms/login/user', auth.login)
 // Only the requests that start with /api/v1/* will be checked for the token.
 // Any URL's that do not follow the below pattern should be avoided unless you
 // are sure that authentication is not needed
-app.all('/bms/*', [require('./middlewares/validateRequest')])
+// app.all('/bms/*', [require('./middlewares/validateRequest')])
 
 //Bypass Intercept
 app.get('/bms/document/download/:fileName', document.download)

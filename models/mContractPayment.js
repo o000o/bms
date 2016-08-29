@@ -17,6 +17,7 @@ const mCtPayment = mCfg.sequelize.define('contract_payment', {
 	price: {type: Sequelize.REAL, allowNull: true},
 	priceIncVat: {type: Sequelize.REAL, field:'price_inc_vat', allowNull: true},
 	paymentPeriod: {type: Sequelize.STRING, field: 'payment_period', allowNull: true},
+	paymentDate: {type: Sequelize.DATEONLY, field: 'payment_date', allowNull: true},
 	vatFlag: {type: Sequelize.STRING, field:'vat_flag', allowNull: true},
 	whtFlag: {type: Sequelize.STRING, field:'wht_flag', allowNull: true},
 	whtRate: {type: Sequelize.STRING, field:'wht_rate', allowNull: true},
