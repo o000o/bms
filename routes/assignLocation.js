@@ -16,8 +16,8 @@ exports.validateData = (req) => {
       ret= {"status": true, "err":"assignLocationList not Found"}
     } else {
       req.body.requestData.assignLocationList.forEach(function(value){
-        if (value.urId == null || value.builgingAreaId == null || value.createBy == null ||
-          value.movementType == null || value.movementDate ==null || value.builgingAreaRemain == null) {
+        if (value.urId == null || value.buildingAreaId == null || value.createBy == null ||
+          value.movementType == null || value.movementDate ==null || value.buildingAreaRemain == null) {
           ret= {"status": true, "err":"Madatory parameter Missing"}
         }
       })
@@ -51,24 +51,24 @@ const assignLocation = {
             edit.countSuccess = 0
             edit.countError = 0
             //edit.editResults = []
-            //delete req.body.requestData.builgingAreaRemain
+            //delete req.body.requestData.buildingAreaRemain
             //logger.info(req,+'|delete:'+JSON.stringify(req.body.requestData))
             req.body.requestData.assignLocationList.forEach((item)=>{ // Loop through some items
               edit.countPush = edit.countPush + 1
               asyncTasks.push((callback)=>{
                 cmd = 'pushUpdateBuildingAreaTask'
-                let tmWhere = {buildingAreaId:item.builgingAreaId}
+                let tmWhere = {buildingAreaId:item.buildingAreaId}
                 mBuildingArea.update({
-                    builgingAreaRemain: item.builgingAreaRemain
+                    buildingAreaRemain: item.buildingAreaRemain
                 }, {
                     where: tmWhere
                 }).then((succeed) => {
                     edit.countSuccess = edit.countSuccess + 1
-                    logger.info(req,cmd + '|Data:{\"builgingAreaId\":\"' + item.builgingAreaId +'|\"builgingAreaRemain\":\"' + item.builgingAreaRemain + '\"}|Update complete ' + succeed + ' row')
+                    logger.info(req,cmd + '|Data:{\"buildingAreaId\":\"' + item.buildingAreaId +'|\"buildingAreaRemain\":\"' + item.buildingAreaRemain + '\"}|Update complete ' + succeed + ' row')
                     callback(null, succeed)
                 }).catch((err) => {
                     edit.countError = edit.countError + 1
-                    logger.error(req,cmd + '|Data:{\"builgingAreaId\": \"' + item.builgingAreaId +'|\"builgingAreaRemain\":\"' + item.builgingAreaRemain + '\"}|Error:' + err)
+                    logger.error(req,cmd + '|Data:{\"buildingAreaId\": \"' + item.buildingAreaId +'|\"buildingAreaRemain\":\"' + item.buildingAreaRemain + '\"}|Error:' + err)
                     callback(err, null)
                 })
               } )

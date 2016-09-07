@@ -20,7 +20,7 @@ const userRequest = {
       // insert workflow => update urStatus => send email
       cmd = 'startSeries'
       async.series([
-        (callback)=>{ // config.adminDepartment = 'Admin Team' (front send this)
+        (callback)=>{ // add workflow => config.adminDepartment = 'Admin Team' (front send this)
           cmd = 'createWorkflow'
           mUrWf.create(req.body.requestData).then((succeed) => {
             logger.info(req,cmd+'|AddedWorkflow:'+util.jsonToText(succeed))
@@ -31,7 +31,7 @@ const userRequest = {
             callback(dberr,'Error when create mUrWf')
           })
         },
-        (callback)=>{
+        (callback)=>{ // update UR
           cmd = 'setUrData'
           let jWhere = {urId:req.body.requestData.urId}
           let upStatus = {urStatus:req.body.requestData.urStatus}
@@ -48,14 +48,14 @@ const userRequest = {
             callback(dberr,'Error while update UR')
           })
         },
-        (callback)=>{
+        (callback)=>{ // send Email notification
       //manager approve => email admin <= query all admin in user for email and send them all
       //manager reject => email user <= email in UR
       //admin reject => email user & manager <= email in UR & user <= search manager from workflow
       //admin accept => don't email
       //admin complete => email user & manager <= email in UR & user <= search manager from workflow
-          let wcmd = 'chkIfEmailNotification'
-          logger.info(req,'notifyEmail|'+cfg.email.notify)
+          let wcmd = 'chkNotifyEmail'
+          logger.debug(req,'notifyEmail|'+cfg.email.notify)
           if(cfg.email.notify){ //Send Email?
             wcmd = 'startWaterfall'
             async.waterfall([
@@ -117,6 +117,9 @@ const userRequest = {
                       wcallback(null,to)
                     })
                     break
+                  default:
+                    callback(null,'DONE')
+                    break                
                 }
               },
               (to,wcallback)=>{ //query UR
@@ -151,9 +154,12 @@ const userRequest = {
                 wcmd = 'sendEmail'
                 logger.info(req,wcmd+'|To:'+to) // Remove after use test email
                 logger.debug(req,wcmd+'|To:'+to+'|UR:'+util.jsonToText(ur))
-                ext.sendEmail(to,ur,(eresult)=>{
-                  logger.info(req,'notifyEmail|'+util.jsonToText(eresult))
-                  wcallback(null,eresult)
+                ext.sendEmail(to,ur).then(mresult=>{
+                  logger.info(req,'notifyEmail|'+util.jsonToText(mresult))
+                  wcallback(null,mresult)
+                }).catch(merr=>{
+                  logger.error(req,'notifyEmail|'+util.jsonToText(merr))
+                  wcallback(null,merr)
                 })
               }], (werr, wresult)=>{
                 if(werr){ // email not sent
@@ -259,63 +265,62 @@ const userRequest = {
 
         //call OM => save User & UR & Workflow => async.waterfall??
         if(userRight){
-          cmd = 'callOM'
-          ext.callOm(req,(err,result)=>{
-            if(err){
-              // logger.error(req,cmd+'|'+util.inspect(err))
-              logger.error(req,cmd+'|'+util.jsonToText(err))
-              logger.summary(req,cmd+'|'+err.desc)
+          cmd = 'omGetEmployeeAndMgrByUser'
+          ext.omGetEmployeeAndMgrByUser(req).then(om=>{
+            logger.info(req,cmd+'|OM result:'+util.jsonToText(om))
+            upUser.userName = om.managerUser
+            upUser.email = om.managerEmail
+            upUser.name = om.managerName
+            upUser.surname = om.managerSurname
+
+            //Update Maneger data in table user don't care success or not just write log
+            // cmd = 'updateUserManagement'
+            logger.info(req,'prepareManagerData|'+util.jsonToText(upUser))
+            // mUser.upsert({userName:dmUser, userType:'MANAGER', email:dmEmail, createBy:'system'})
+            mUser.update(upUser,{where:{userName:upUser.userName}}).then((succeed) => {
+              logger.info(req,'updateUserManagement|Updated '+ succeed +' records')
+              if(succeed==0){  //Data not exist insert new
+                mUser.create(upUser).then((succeed) => {
+                  logger.info(req,'updateUserManagement|Inserted:'+util.jsonToText(succeed))
+                }).catch((err) => {
+                  logger.info(req,'updateUserManagement|InsertFailed|'+err)
+                })
+              }
+            }).catch((err) => {
+              logger.info(req,'updateUserManagement|UpdateFailed|'+err)
+            })
+
+            //Add UR & Workflow for real!!!
+            cmd = 'prepareWorkflowData'
+            req.body.requestData.urWorkflowList={urStatus:req.body.requestData.urStatus,
+              updateBy:om.managerUser,department:om.department}
+            logger.info(req,cmd+'|'+util.jsonToText(req.body.requestData.urWorkflowList))
+            cmd = 'addUserEmail_Department'
+            req.body.requestData.userDepartment = om.department
+            req.body.requestData.userEmail = om.email
+            req.body.requestData.userName = om.name
+            req.body.requestData.userSurname = om.surname
+            cmd = 'createUR_Workflow'
+            mUR.create(req.body.requestData,{include:[{model: mUrWf, as:cst.models.urWorkflows}]})
+            .then((succeed) => {
+              logger.info(req,cmd+'|'+util.jsonToText(succeed))
+              logger.info(req,'notifyEmail|'+cfg.email.notify)
+              if(cfg.email.notify){ //Send Email?
+                ext.sendEmail(result.managerEmail,succeed).then(result=>{
+                  logger.info(req,'notifyEmail|'+util.jsonToText(result))
+                }).catch(err=>{
+                  logger.error(req,'notifyEmail|'+util.jsonToText(err))
+                })
+              }
+              resp.getSuccess(req,res,cmd,succeed)
+            }).catch((err) => {
+              logger.error(req,cmd+'|'+err)
+              logger.summary(req,cmd+'|'+error.desc_01001)
               res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-            }else{
-              logger.info(req,cmd+'|OM result:'+util.jsonToText(result))
-              upUser.userName = result.managerUser
-              upUser.email = result.managerEmail
-              upUser.name = result.managerName
-              upUser.surname = result.managerSurname
-
-              //Update Maneger data in table user don't care success or not just write log
-              // cmd = 'updateUserManagement'
-              logger.info(req,'prepareManagerData|'+util.jsonToText(upUser))
-              // mUser.upsert({userName:dmUser, userType:'MANAGER', email:dmEmail, createBy:'system'})
-              mUser.update(upUser,{where:{userName:upUser.userName}}).then((succeed) => {
-                logger.info(req,'updateUserManagement|Updated '+ succeed +' records')
-                if(succeed==0){  //Data not exist insert new
-                  mUser.create(upUser).then((succeed) => {
-                    logger.info(req,'updateUserManagement|Inserted:'+util.jsonToText(succeed))
-                  }).catch((err) => {
-                    logger.info(req,'updateUserManagement|InsertFailed|'+err)
-                  })
-                }
-              }).catch((err) => {
-                logger.info(req,'updateUserManagement|UpdateFailed|'+err)
-              })}
-
-              //Add UR & Workflow for real!!!
-              cmd = 'prepareWorkflowData'
-              req.body.requestData.urWorkflowList={urStatus:req.body.requestData.urStatus,
-                updateBy:result.managerUser,department:result.department}
-              logger.info(req,cmd+'|'+util.jsonToText(req.body.requestData.urWorkflowList))
-              cmd = 'addUserEmail_Department'
-              req.body.requestData.userDepartment = result.department
-              req.body.requestData.userEmail = result.email
-              req.body.requestData.userName = result.name
-              req.body.requestData.userSurname = result.surname
-              cmd = 'createUR_Workflow'
-              mUR.create(req.body.requestData,{include:[{model: mUrWf, as:cst.models.urWorkflows}]})
-              .then((succeed) => {
-                logger.info(req,cmd+'|'+util.jsonToText(succeed))
-                logger.info(req,'notifyEmail|'+cfg.email.notify)
-                if(cfg.email.notify){ //Send Email?
-                  ext.sendEmail(result.managerEmail,succeed,(result)=>{
-                    logger.info(req,'notifyEmail|'+util.jsonToText(result))
-                  })
-                }
-                resp.getSuccess(req,res,cmd,succeed)
-              }).catch((err) => {
-                logger.error(req,cmd+'|'+err)
-                logger.summary(req,cmd+'|'+error.desc_01001)
-                res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-              })
+            })
+          }).catch(err=>{
+            // logger.error(req,cmd+'|'+util.jsonToText(err))
+            resp.getOmError(req,res,cmd,err)
           })
         }
       }else{

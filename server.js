@@ -59,7 +59,7 @@ app.post('/bms/login/user', auth.login)
 // app.all('/bms/*', [require('./middlewares/validateRequest')])
 
 //Bypass Intercept
-app.get('/bms/document/download/:fileName', document.download)
+app.get('/bms/document/download', document.archivDownload)
 
 // Add the interceptor middleware for renew token
 app.use('/bms/*', [require('./middlewares/interceptResponse')])

@@ -46,5 +46,6 @@ mContract.belongsToMany(mVendorContact, {as:cst.models.contractAgents,
 	through:{model:mContractAgent, as:cst.models.agent},
 	foreignKey:'contractId', 
 	otherKey:'vendorContactId'})
+mDocument.belongsTo(mContract, {as:cst.models.contract,foreignKey:'contractId',targetKey:'contractId'})
 
 module.exports = mContract

@@ -48,3 +48,32 @@ exports.getSuccess = (req,res,cmd,resObj) => {
 	// else res.status(200)
     res.json(this.getJsonSuccess(error.code_00000, error.desc_00000, resObj))
 }
+
+exports.getOmError = (req,res,cmd,err) => {
+	switch(err.code){
+		case error.code_03002:
+			logger.summary(req,cmd+'|'+error.desc_03002+'|'+err.desc)
+			res.json(this.getJsonError(error.code_03002, error.desc_03002, err.desc))
+			break
+		case error.code_03003:
+			logger.summary(req,cmd+'|'+error.desc_03003+'|'+err.desc)
+			res.json(this.getJsonError(error.code_03003, error.desc_03003, err.desc))
+			break
+		case error.code_03004:
+			logger.summary(req,cmd+'|'+error.desc_03004+'|'+err.desc)
+			res.json(this.getJsonError(error.code_03004, error.desc_03004, err.desc))
+			break
+		case error.code_03005:
+			logger.summary(req,cmd+'|'+error.desc_03005+'|'+err.desc)
+			res.json(this.getJsonError(error.code_03005, error.desc_03005, err.desc))
+			break
+		case error.code_03006:
+			logger.summary(req,cmd+'|'+error.desc_03006+'|'+err.desc)
+			res.json(this.getJsonError(error.code_03006, error.desc_03006, err.desc))
+			break
+		default:
+			logger.summary(req,cmd+'|'+error.desc_03001+'|'+err.desc)
+			res.json(this.getJsonError(error.code_03001, error.desc_03001, err.desc))
+            break  
+	}
+}

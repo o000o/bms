@@ -2,6 +2,8 @@
 
 const Sequelize = require('sequelize')
 const mCfg = require('../config/modelCfg')
+const cst = require('../config/constant')
+const mDocument = require('./mDocument')
 
 const mInsurance = mCfg.sequelize.define('insurance', {
 	insuranceId: {type: Sequelize.INTEGER, field: 'insurance_id', primaryKey: true, allowNull: false, autoIncrement: true},
@@ -26,5 +28,7 @@ const mInsurance = mCfg.sequelize.define('insurance', {
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
         createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
 },{freezeTableName: true, timestamps: false})
+
+mDocument.belongsTo(mInsurance, {as:cst.models.insurance,foreignKey:'insuranceId',targetKey:'insuranceId'})
 
 module.exports = mInsurance

@@ -250,149 +250,156 @@ const contract = {
   add: (req, res) => { //no need vendorProfile but need valid vendorId to add contract
     let cmd = 'addContract'
     try{
-      // cmd = 'chkVendorProfileExisting'
-      // let jWhere = {vendorType:req.body.requestData.vendorProfile.vendorType, vendorName1:req.body.requestData.vendorProfile.vendorName1}
-      // logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
-      // mVendorProfile.findOne({where:jWhere,attributes:['vendorId']}).then((db) => {
-      //   logger.info(req,cmd+'|'+util.jsonToText(db))
-
-      //   if(util.isDataFound(db)){ //already have vendor use old data
-      //     logger.info(req,cmd+'|'+error.desc_01004)
-      //     req.body.requestData.vendorId = db.vendorId //link old vendor with contract
-      //     delete req.body.requestData.vendorProfile //delete new vendor data
-      //   }
+      cmd = 'prepareData'
       let cloneLocation = (util.isDataFound(req.body.requestData.buildingLocation))?JSON.parse(util.jsonToText(req.body.requestData.buildingLocation)):null
       if(util.isDataFound(cloneLocation)) delete req.body.requestData.buildingLocation //delete Location
+      let cloneArea = (util.isDataFound(cloneLocation.buildingAreaList))?JSON.parse(util.jsonToText(cloneLocation.buildingAreaList)):null
+      if(util.isDataFound(cloneArea)) delete cloneLocation.buildingAreaList //delete Area
 
       let cloneAgent = []
       let tempAgent = []
       if(util.isDataFound(req.body.requestData.contractVendorAgentList)){
-        req.body.requestData.contractVendorAgentList.forEach((value) => {tempAgent.push(
-	{
-		vendorContactId: value.vendorContactId,
-		createBy: value.createBy
-	})})
+        req.body.requestData.contractVendorAgentList.forEach((value) => 
+          {tempAgent.push({
+        		vendorContactId: value.vendorContactId,
+        		createBy: value.createBy
+        	})})
         delete req.body.requestData.contractVendorAgentList //delete AgentList
       }
       
-        cmd = 'insertContractList'
-        let jWhere = {contractNo:req.body.requestData.contractNo, contractDate:req.body.requestData.contractDate}
-        logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
-        mContract.findOrCreate({where:jWhere, defaults:req.body.requestData, include:[
-          // {model: mVendorProfile, as:cst.models.vendorProfile,
-          //   include:{model:mVendorContact, as:cst.models.vendorContacts}},
-          {model: mPayment, as:cst.models.contractPayments},
-          {model: mDocument, as:cst.models.documents}
-          // {model: mLocation, as:'buildingLocation',through:{model:mArea, as:'buildingAreaList'}}
-        ]})
-        .spread((db,succeed) => {
-          logger.info(req,cmd+'|Inserted:'+succeed+'|'+util.jsonToText(db))
-          if(succeed){ //contract inserted
-            // resp.getSuccess(req,res,cmd,succeed)
-            let cloneDb = JSON.parse(util.jsonToText(db))
-            let asyncTasks=[]
-            let asyncError=0
+      cmd = 'insertContractList'
+      let jWhere = {contractNo:req.body.requestData.contractNo, contractDate:req.body.requestData.contractDate}
+      logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
+      mContract.findOrCreate({where:jWhere, defaults:req.body.requestData, include:[
+        // {model: mVendorProfile, as:cst.models.vendorProfile,
+        //   include:{model:mVendorContact, as:cst.models.vendorContacts}},
+        {model: mPayment, as:cst.models.contractPayments},
+        // {model: mDocument, as:cst.models.documents} // cut into new api
+      ]})
+      .spread((db,succeed) => {
+        logger.info(req,cmd+'|Inserted:'+succeed+'|'+util.jsonToText(db))
+        if(succeed){ //contract inserted
+          // resp.getSuccess(req,res,cmd,succeed)
+          let cloneDb = JSON.parse(util.jsonToText(db))
+          let asyncTasks=[]
+          let asyncError=0
 
-            //check and add agent here!!!
-            cmd = 'checkAgentList'
-            if(util.isDataFound(tempAgent)){
-              tempAgent.forEach((value) => {
-		cloneAgent.push({
-			vendorContactId: value.vendorContactId,
-			contractId: db.contractId,
-			createBy: value.createBy
-		})})
-              asyncTasks.push((callback)=>{
-                mContractAgent.bulkCreate(cloneAgent, {validate:true})
-                .then((succeed) => {
-                  logger.info(req,'insertAgentList|'+util.jsonToText(succeed))
-                  callback()
-                  // resp.getSuccess(req,res,cmd)
-                }).catch((err) => {
-                  logger.error(req,'insertAgentList|'+err)
-                  asyncError=1
-                  callback()
-                  // logger.summary(req,'insertAgentList|'+error.desc_01001)
-                  // res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-                })
+          //check and add agent here!!!
+          cmd = 'checkAgentList'
+          if(util.isDataFound(tempAgent)){
+            tempAgent.forEach((value) => {
+          		cloneAgent.push({
+          			vendorContactId: value.vendorContactId,
+          			contractId: db.contractId,
+          			createBy: value.createBy
+          		})})
+            cmd = 'pushAgentList'
+            asyncTasks.push((callback)=>{
+              mContractAgent.bulkCreate(cloneAgent, {validate:true})
+              .then((succeed) => {
+                logger.info(req,'insertAgentList|'+util.jsonToText(succeed))
+                callback()
+              }).catch((err) => {
+                logger.error(req,'insertAgentList|'+err)
+                asyncError=3
+                callback()
               })
-            }
+            })
+          }
 
-            //check and add location here!!!
-            cmd = 'checkLocation'
-            if(util.isDataFound(cloneLocation)){
-              //add contractId to areaList
-              cloneLocation.buildingAreaList.forEach((value) => {value.contractId=db.contractId})
-              asyncTasks.push((callback)=>{
-                jWhere={buildingName:cloneLocation.buildingName, buildingNo:cloneLocation.buildingNo}
-                logger.info(req,cmd+'|where:'+util.jsonToText(jWhere))
-                logger.info(req,cmd+'|Location:'+util.jsonToText(cloneLocation))
-                mLocation.findOrCreate({where:jWhere, defaults:cloneLocation,
-                  include:[{model: mArea, as:cst.models.locationAreas}]})
-                .spread((db,succeed) => {
-                  logger.info(req,'insertLocation|Inserted:'+succeed+'|'+util.jsonToText(db))
-                  // cloneDb.buildingLocation = JSON.parse(util.jsonToText(db))
-                  if(!succeed){ //Location inserted
-                    // resp.getSuccess(req,res,cmd,cloneDb)
-                    // logger.info(req,'insertAgentList|'+util.jsonToText(cloneDb))
-                  // }else{ //Location exist add Area
-                    logger.info(req,'insertLocation|'+error.desc_01004)
-                    // cmd = 'insertAreaList'
-                    cloneLocation.buildingAreaList.forEach((value) => {value.buildingId=db.buildingId})
-                    logger.info(req,'insertAreaList|AreaList:'+util.jsonToText(cloneLocation.buildingAreaList))
-                    mArea.bulkCreate(cloneLocation.buildingAreaList, {validate:true})
-                    .then((succeed) => {
-                      logger.info(req,'insertAreaList|Inserted:'+util.jsonToText(succeed))
-                      //too lazy too query area again so just return contract
-                      // delete cloneDb.buildingLocation.buildingAreaList //delete areaList from other contract
-                      // resp.getSuccess(req,res,cmd,cloneDb)
-                    }).catch((err) => {
-                      logger.error(req,'insertAreaList|Error while create AreaList|'+err)
-                      asyncError=1
-                      // logger.summary(req,cmd+'|'+error.desc_01001)
-                      // res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-                    })
-                  }
-                  callback()
-                }).catch((err) => {
-                  logger.error(req,'insertLocation|Error while create Location|'+err)
-                  asyncError=1
-                  callback()
-                  // logger.summary(req,cmd+'|'+error.desc_01001)
-                  // res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-                })
+          //check and add location here!!!
+          cmd = 'checkLocation'
+          if(util.isDataFound(cloneLocation)){
+            //add contractId to areaList
+            // cloneLocation.buildingAreaList.forEach((value) => {value.contractId=db.contractId})
+            let cmdPush = 'pushLocation'
+            asyncTasks.push((callback)=>{
+              jWhere={buildingName:cloneLocation.buildingName, buildingNo:cloneLocation.buildingNo}
+              logger.info(req,cmdPush+'|Location:'+util.jsonToText(cloneLocation)+'|where:'+util.jsonToText(jWhere))
+              mLocation.findOrCreate({where:jWhere, defaults:cloneLocation})
+                // include:[{model: mArea, as:cst.models.locationAreas}]}) // db lock when send 2 duplicate areas in a row
+              .spread((dbl,succeed) => {
+                logger.info(req,cmdPush+'|Inserted:'+succeed+'|'+util.jsonToText(dbl))
+                // cloneDb.buildingLocation = JSON.parse(util.jsonToText(db))
+                if(!succeed) logger.info(req,'insertLocation|'+error.desc_01004)
+                if(util.isDataFound(cloneArea)){
+                  cmdPush = 'addIdIntoAreaList'
+                  cloneArea.forEach((value) => {
+                    value.buildingId=dbl.buildingId
+                    value.contractId=db.contractId
+                  })
+                  logger.info(req,cmdPush+'|AreaList:'+util.jsonToText(cloneArea))
+                  cmdPush = 'bulkCreateAreaList'
+                  mArea.bulkCreate(cloneArea, {validate:true})
+                  .then((succeed) => {
+                    logger.info(req,cmdPush+'|'+util.jsonToText(succeed))
+                    //too lazy too query area again so just return contract
+                    callback()
+                  }).catch((err) => {
+                    logger.error(req,cmdPush+'|'+err)
+                    asyncError=1
+                    callback()
+                  })
+                }else callback()
+              }).catch((err) => {
+                logger.error(req,cmdPush+'|'+err)
+                asyncError=2
+                callback()
               })
-            }
+            })
+          }
 
-            cmd = 'runAsyncTasks'
-            async.parallel(asyncTasks, ()=>{
-              // All tasks are done now
-              // doSomethingOnceAllAreDone()
-              if(asyncError){
-                logger.error(req,cmd+'|Error while run asyncTasks|')
+          cmd = 'runAsyncTasks'
+          async.parallel(asyncTasks, ()=>{
+            // All tasks are done now
+            // doSomethingOnceAllAreDone()
+            switch(asyncError){
+              case 0:
+                resp.getSuccess(req,res,cmd,cloneDb)
+                break
+              case 1:
+                logger.summary(req,cmd+'|'+error.desc_01016)
+                res.json(resp.getJsonError(error.code_01016,error.desc_01016,cloneDb))
+                break
+              case 2:
+                logger.summary(req,cmd+'|'+error.desc_01021)
+                res.json(resp.getJsonError(error.code_01021,error.desc_01021,cloneDb))
+                break
+              case 3:
+                logger.summary(req,cmd+'|'+error.desc_01020)
+                res.json(resp.getJsonError(error.code_01020,error.desc_01020,cloneDb))
+                break
+              default:
                 logger.summary(req,cmd+'|'+error.desc_01001)
                 res.json(resp.getJsonError(error.code_01001,error.desc_01001,cloneDb))
-              }else{
-                // logger.info(req,cmd+'|'+ util.jsonToText({contractId:tContractId,result}))
-                resp.getSuccess(req,res,cmd,cloneDb)
-              }
-            })
+                break
+            }
+            // logger.error(req,'ooooooooooo2|'+asyncError)
+            // if(asyncError){
+            //   logger.error(req,cmd+'|Error while run asyncTasks|')
+            //   logger.summary(req,cmd+'|'+error.desc_01001)
+            //   res.json(resp.getJsonError(error.code_01001,error.desc_01001,cloneDb))
+            // }else{
+            //   // logger.info(req,cmd+'|'+ util.jsonToText({contractId:tContractId,result}))
+            //   resp.getSuccess(req,res,cmd,cloneDb)
+            // }
+          })
 
-          }else{ //contract existed don't add location list
-            logger.info(req,cmd+'|'+error.desc_01004)
-            logger.summary(req,cmd+'|'+error.desc_01004)
-            res.json(resp.getJsonError(error.code_01004,error.desc_01004,db))
-          }
-        }).catch((err) => {
-            logger.error(req,cmd+'|Error while create contractList|'+err)
-            logger.summary(req,cmd+'|'+error.desc_01001)
-            res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-        })
-      // }).catch((err) => {
-      //     logger.error(req,cmd+'|Error while check venderProfile|'+err)
-      //     logger.summary(req,cmd+'|'+error.desc_01001)
-      //     res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
-      // })
+        }else{ //contract existed don't add location list
+          logger.info(req,cmd+'|'+error.desc_01004)
+          logger.summary(req,cmd+'|'+error.desc_01004)
+          res.json(resp.getJsonError(error.code_01004,error.desc_01004,db))
+        }
+      }).catch((err) => {
+          logger.error(req,cmd+'|Error while create contractList|'+err)
+          logger.summary(req,cmd+'|'+error.desc_01001)
+          res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+      })
+    // }).catch((err) => {
+    //     logger.error(req,cmd+'|Error while check venderProfile|'+err)
+    //     logger.summary(req,cmd+'|'+error.desc_01001)
+    //     res.json(resp.getJsonError(error.code_01001,error.desc_01001,err))
+    // })
     }catch(err){
       logger.error(req,cmd+'|'+err)
       resp.getInternalError(req,res,cmd,err)
@@ -1187,8 +1194,43 @@ const contract = {
       logger.error(req,cmd+'|'+err)
       resp.getInternalError(req,res,cmd,err)
     }
-  }
+  },
 
+  queryById: (req, res) => {
+    let cmd = 'queryContractById'
+    try{
+      cmd = 'findContract'
+      mContract.findOne({where:{contractId:req.params.contractId},
+        include:[
+          {model:mPayment, as:cst.models.contractPayments},
+          {model:mDocument, as:cst.models.documents},
+          {through:{model:mContractAgent, as:cst.models.agent, attributes:[]},
+            model:mVendorContact, as:cst.models.contractAgents},
+          {model:mVendorProfile, as:cst.models.vendorProfile,
+            include:{model:mVendorContact, as:cst.models.vendorContacts}},
+          {through:{model:mArea, as:cst.models.area, attributes:[]},
+            model:mLocation,
+            as:cst.models.locations,
+            include:{model:mArea, as:cst.models.locationAreas,where:{contractId:req.params.contractId}}} 
+        ]})
+      .then((db) => {
+        cmd = 'chkContractData'
+        logger.query(req,cmd+'|'+util.jsonToText(db))
+        if(util.isDataFound(db)) resp.getSuccess(req,res,cmd,db)
+        else{
+          logger.summary(req,cmd+'|Not Found Contract')
+          res.json(resp.getJsonError(error.code_01003,error.desc_01003,db))
+        }
+      }).catch((err) => {
+        logger.error(req,cmd+'|'+err)
+        logger.summary(req,cmd+'|'+error.desc_01002)
+        res.json(resp.getJsonError(error.code_01002,error.desc_01002,err))
+      })
+    }catch(err){
+      logger.error(req,cmd+'|'+err)
+      resp.getInternalError(req,res,cmd,err)
+    }
+  }
 }
 
 module.exports = contract
