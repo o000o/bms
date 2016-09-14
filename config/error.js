@@ -92,6 +92,8 @@ error.code_03005 = '03005'
 error.desc_03005 = 'OM parseString result error.'
 error.code_03006 = '03006'
 error.desc_03006 = 'OM query unsuccess.'
+error.code_03007 = '03007'
+error.desc_03007 = 'OM manager not found.'
 
 // Error Code Email
 error.code_04000 = '04000'

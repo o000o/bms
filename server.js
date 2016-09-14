@@ -15,6 +15,10 @@ const util = require('./utils/bmsUtils')
 // const https = require('https')
 const moment = require('moment-timezone')
 const document = require('./routes/document.js');
+const passport = require('passport')
+require('./middlewares/passport')(passport, cfg)
+
+
 const app = express()
 
 // app.use(mlogger('dev'))
@@ -48,9 +52,24 @@ app.use((err, req, res, next) =>{ //Incoming and then Error
     return resp.getIncompleteParameter(req,res,'SyntaxError',err)
   } else next()
 })
-
+app.use(passport.initialize())
 app.get('/bms/logout/user', auth.logout)
 app.post('/bms/login/user', auth.login)
+
+app.get('/bms/loginSSO/user', 
+  passport.authenticate(cfg.sso.passport.strategy,
+      {
+        successRedirect: '/',
+        failureRedirect: '/login'
+      }
+  )
+)
+app.post(cfg.sso.passport.saml.path,
+  passport.authenticate(cfg.sso.passport.strategy,
+    {
+      failureRedirect: '/',
+      failureFlash: true
+    }), auth.samlLogin);
 
 // Auth Middleware - This will check if the token is valid
 // Only the requests that start with /api/v1/* will be checked for the token.

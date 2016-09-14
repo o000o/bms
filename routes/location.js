@@ -8,6 +8,8 @@ const logger = require('../utils/logUtils')
 const mLocation = require('../models/mBuildingLocation')
 const mArea = require('../models/mBuildingArea')
 const mDetail = require('../models/mBuildingDetail')
+const mUR = require('../models/mUR')
+const mMovement = require('../models/mMovement')
 const location = {
     /*************
     ** "attributes": { "exclude": ["contractId","urDate","company"] },
@@ -74,17 +76,17 @@ const location = {
             //add include area into jWhere
             jWhere.include.model = mArea
             jWhere.include.as = cst.models.locationAreas
-            jWhere.include.required = false
+            jWhere.include.required = true
             //add include Detail into jWhere
-            if (util.isDataFound(jWhere.include.attributes)) {
-                jWhere.include.include = {}
-                jWhere.include.include.model = mDetail
-                jWhere.include.include.as = cst.models.areaDetails
-                jWhere.include.include.required = false
-                jWhere.include.include.attributes = {
-                    exclude: ['buildingAreaId']
-                }
-            }
+            // if (util.isDataFound(jWhere.include.attributes)) {
+            //     jWhere.include.include = {}
+            //     jWhere.include.include.model = mDetail
+            //     jWhere.include.include.as = cst.models.areaDetails
+            //     jWhere.include.include.required = false
+            //     jWhere.include.include.attributes = {
+            //         exclude: ['buildingAreaId']
+            //     }
+            // }
             logger.info(req, cmd + '|Criteria:' + jsUtil.inspect(jWhere, {
                 showHidden: false,
                 depth: null
@@ -166,13 +168,35 @@ const location = {
                 jWhere.include.push(where)
 
                 //add include area detail
+                // where = {}
+                // where.model = mDetail
+                // where.as = cst.models.areaDetails
+                // where.required = false
+                // where.attributes = {
+                //     exclude: ['buildingAreaId']
+                // }
+                // jWhere.include.push(where)
+
+		//add include Movement
                 where = {}
-                where.model = mDetail
-                where.as = cst.models.areaDetails
+                where.model = mMovement
+                where.as = cst.models.movements
                 where.required = false
                 where.attributes = {
                     exclude: ['buildingAreaId']
                 }
+                jWhere.include.push(where)
+
+		//add include UR
+                where = {}
+		where.through={model:mMovement, as:cst.models.movements, attributes:[]}
+                where.model = mUR
+                where.as = cst.models.urs
+                where.required = false
+                where.attributes = {
+                    exclude: ['buildingAreaId']
+                }
+
                 jWhere.include.push(where)
                 
                 logger.info(req, cmd + '|Criteria:' + jsUtil.inspect(jWhere, {

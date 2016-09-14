@@ -1114,6 +1114,7 @@ const contract = {
         }
         criteria.model=mVendorProfile
         criteria.as=cst.models.vendorProfile
+        criteria.required = true
         if(util.jsonToText(criteria.attributes)!='[]'){ //Error if not check => Cannot set property 'vendorContactList' of undefined
           childCriteria.model=mVendorContact
           childCriteria.as=cst.models.vendorContacts
@@ -1141,6 +1142,7 @@ const contract = {
           criteria.through={model:mArea, as:cst.models.area, attributes:[]}
           criteria.model=mLocation
           criteria.as=cst.models.locations
+          criteria.required = true
           childCriteria.model=mArea
           childCriteria.as=cst.models.locationAreas
           criteria.include=childCriteria

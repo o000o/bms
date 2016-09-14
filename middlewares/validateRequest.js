@@ -43,26 +43,26 @@ module.exports = (req, res, next) => {
         return
         // return resp.getTokenExpire(res)
       }
-
+      next()
       // // Authorize the user to see if s/he can access our resources
-      const jWhere = {userName: decoded.userName}
-      cmd = 'chkUserValidate'
-      logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
+      // const jWhere = {userName: decoded.userName}
+      // cmd = 'chkUserValidate'
+      // logger.info(req,cmd+'|where:'+JSON.stringify(jWhere))
 
-      mUser.findOne({where:jWhere}).then((user) => {
-        if(util.isDataFound(user)){
-          logger.info(req,cmd+'|Found User')
-          next() // To move to next middleware    
-        }else{
-          //Wrong Token lead to wrong user
-          logger.info(req,cmd+'|Not Found User')
-          return resp.getInvalidToken(req,res,cmd)
-        }
-      }).catch((err) => {
-        logger.error(req,cmd+'|Error while check return data from DB|'+err)
-        //Wrong Token lead to wrong user
-        return resp.getInvalidToken(req,res,cmd,err)
-      })
+      // mUser.findOne({where:jWhere}).then((user) => {
+      //   if(util.isDataFound(user)){
+      //     logger.info(req,cmd+'|Found User')
+      //     next() // To move to next middleware    
+      //   }else{
+      //     //Wrong Token lead to wrong user
+      //     logger.info(req,cmd+'|Not Found User')
+      //     return resp.getInvalidToken(req,res,cmd)
+      //   }
+      // }).catch((err) => {
+      //   logger.error(req,cmd+'|Error while check return data from DB|'+err)
+      //   //Wrong Token lead to wrong user
+      //   return resp.getInvalidToken(req,res,cmd,err)
+      // })
     } else {
       if(req.method == "OPTIONS" || req.url == "/bms/login/user"){
         logger.info(req,cmd+'|No need Token')

@@ -10,7 +10,8 @@ const cst = require('../config/constant')
 const replaceStream = require('replacestream')
 const mCfg = require('../config/modelCfg')
 const resp = require('./respUtils')
-const chalk = require('chalk')
+const cheerio = require('cheerio')
+const async = require('async')
 
 exports.soapCreateClient=() => {
   return new Promise((resolve, reject) => {
@@ -54,9 +55,9 @@ exports.omParseString=(omResult) => {
 
 exports.omSearchOrgInfo=(req,params) => {
   return new Promise((resolve, reject) => {
+    let jErr = {code:error.code_03001}
     try{
       this.soapCreateClient().then(client=>{
-        let jErr = {code:error.code_03001}
         let args = {OmCode:cfg.om.OmCode,CompanyCode:params.companyCode,OrgDescOrOrgCode:params.orgDesc}
         logger.debug(req,'prepareOMrequest|'+util.jsonToText(args))
         client.OM_WS_SearchOrgInfo(args, (err, result)=>{
@@ -67,48 +68,6 @@ exports.omSearchOrgInfo=(req,params) => {
             reject(jErr)
           }else{
             this.omParseString(result.OM_WS_SearchOrgInfoResult).then(table=>{
-              let om = []
-
-              logger.debug(req,'parserOmResult|'+util.jsonToText(om))
-              resolve(om)
-            }).catch(err=>{
-              if(err.code) reject(err)
-              else{
-                jErr.desc = err
-                reject(jErr)
-              }
-            })
-          }
-        },{timeout:cfg.om.timeout})
-      }).catch(err=>{
-        if(err.code) reject(err)
-        else{
-          jErr.desc = err
-          reject(jErr)
-        }
-      })
-    }catch(err){
-      jErr.desc = err
-      reject(jErr)
-    }
-  })
-}
-
-exports.omListOrganizeLower=(req,companyId) => {
-  return new Promise((resolve, reject) => {
-    try{
-      this.soapCreateClient().then(client=>{
-        let jErr = {code:error.code_03001}
-        let args = {OmCode:cfg.om.OmCode,OrgCode:companyId,Level:''}
-        logger.debug(req,'prepareOMrequest|'+util.jsonToText(args))
-        client.OM_WS_ListOrganizeLower(args, (err, result)=>{
-          logger.debug(req,'omRawResponse|'+util.jsonToText(result))
-          if(err){
-            jErr.code = error.code_03004
-            jErr.desc = err
-            reject(jErr)
-          }else{
-            this.omParseString(result.OM_WS_ListOrganizeLowerResult).then(table=>{
               let om = []
               table.forEach(value => {
                 om.push({orgCode:value.ORGCODE[0],orgName:value.ORGNAME[0],
@@ -142,11 +101,56 @@ exports.omListOrganizeLower=(req,companyId) => {
   })
 }
 
-exports.omListCompanyInWireless=(req) => {
+exports.omListOrganizeLower=(req,companyId) => {
   return new Promise((resolve, reject) => {
+    let jErr = {code:error.code_03001}
     try{
       this.soapCreateClient().then(client=>{
-        let jErr = {code:error.code_03001}
+        let args = {OmCode:cfg.om.OmCode,OrgCode:companyId,Level:''}
+        logger.debug(req,'prepareOMrequest|'+util.jsonToText(args))
+        client.OM_WS_ListOrganizeLower(args, (err, result)=>{
+          logger.debug(req,'omRawResponse|'+util.jsonToText(result))
+          if(err){
+            jErr.code = error.code_03004
+            jErr.desc = err
+            reject(jErr)
+          }else{
+            this.omParseString(result.OM_WS_ListOrganizeLowerResult).then(table=>{
+              let om = []
+              table.forEach(value => {
+                om.push({orgCode:value.ORGCODE[0],orgName:value.ORGNAME[0],
+                  orgDesc:value.ORGDESC[0],orgLevel:value.ORGLEVEL[0]})
+              })
+              logger.debug(req,'parserOmResult|'+util.jsonToText(om))
+              resolve(om)
+            }).catch(err=>{
+              if(err.code) reject(err)
+              else{
+                jErr.desc = err
+                reject(jErr)
+              }
+            })
+          }
+        },{timeout:cfg.om.timeout})
+      }).catch(err=>{
+        if(err.code) reject(err)
+        else{
+          jErr.desc = err
+          reject(jErr)
+        }
+      })
+    }catch(err){
+      jErr.desc = err
+      reject(jErr)
+    }
+  })
+}
+
+exports.omListCompanyInWireless=(req) => {
+  return new Promise((resolve, reject) => {
+    let jErr = {code:error.code_03001}
+    try{
+      this.soapCreateClient().then(client=>{
         let args = {OmCode:cfg.om.OmCode}
         logger.debug(req,'prepareOMrequest|'+util.jsonToText(args))
         client.OM_WS_ListCompanyInWireless(args, (err, result)=>{
@@ -189,9 +193,9 @@ exports.omListCompanyInWireless=(req) => {
 
 exports.omGetEmployeeAndMgrByUser=(req) => {
   return new Promise((resolve, reject) => {
+    let jErr = {code:error.code_03001}
     try{
       this.soapCreateClient().then(client=>{
-        let jErr = {code:error.code_03001}
         let args = {OmCode:cfg.om.OmCode,Username:util.getUserName(req.header('x-userTokenId'))}
         logger.debug(req,'prepareOMrequest|'+util.jsonToText(args))
         client.OM_WS_GetEmployeeAndMgrByUser(args, (err, result)=>{
@@ -212,6 +216,184 @@ exports.omGetEmployeeAndMgrByUser=(req) => {
               om.managerEmail=table[0].APPROVAL_EMAIL[0]
               om.managerName=table[0].APPROVAL_THNAME[0]
               om.managerSurname=table[0].APPROVAL_THSURNAME[0]
+              om.managerPosition=table[0].APPROVAL_POSITION[0]
+
+              logger.debug(req,'parserOmResult|'+util.jsonToText(om))
+              resolve(om)
+            }).catch(err=>{
+              if(err.code) reject(err)
+              else{
+                jErr.desc = err
+                reject(jErr)
+              }
+            })
+          }
+        },{timeout:cfg.om.timeout})
+      }).catch(err=>{
+        if(err.code) reject(err)
+        else{
+          jErr.desc = err
+          reject(jErr)
+        }
+      })
+    }catch(err){
+      jErr.desc = err
+      reject(jErr)
+    }
+  })
+}
+
+exports.omGetVpUpByUser=(req) => {
+  return new Promise((resolve, reject) => {
+    let jErr = {code:error.code_03001}
+    try{
+      let om = {}
+      om.managerUser = util.getUserName(req.header('x-userTokenId')) //'duangpoj' //
+      this.soapCreateClient().then(client=>{
+        async.doUntil(
+          (callback)=>{
+            let args = {OmCode:cfg.om.OmCode,Username:om.managerUser}
+            logger.debug(req,'prepareOMrequest|'+util.jsonToText(args))
+            client.OM_WS_GetEmployeeAndMgrByUser(args, (err, result)=>{
+              logger.debug(req,'omRawResponse|'+util.jsonToText(result))
+              if(err){
+                jErr.code = error.code_03004
+                jErr.desc = err
+                callback(jErr,om)
+              }else{
+                this.omParseString(result.OM_WS_GetEmployeeAndMgrByUserResult).then(table=>{
+                  om.user=table[0].USERNAME[0]
+                  om.email=table[0].EMAIL[0]
+                  om.name=table[0].THNAME[0]
+                  om.surname=table[0].THSURNAME[0]
+                  om.department=table[0].BUNAME[0]
+                  om.managerUser=table[0].APPROVAL_USERNAME[0]
+                  om.managerEmail=table[0].APPROVAL_EMAIL[0]
+                  om.managerName=table[0].APPROVAL_THNAME[0]
+                  om.managerSurname=table[0].APPROVAL_THSURNAME[0]
+                  om.managerPosition=table[0].APPROVAL_POSITION[0]
+
+                  logger.debug(req,'parserOmResult|'+util.jsonToText(om))
+                  // resolve(om)
+                  if(table[0].APPROVAL_USERNAME[0]==''){
+                    jErr.code = error.code_03007
+                    jErr.desc = error.desc_03007
+                    logger.debug(req,'checkManager|'+util.jsonToText(jErr))
+                    // console.log('mmmmmmmmm'+util.jsonToText(jErr) )
+                    callback(jErr,om)
+                  }else callback(null, om)
+                }).catch(err=>{
+                  if(err.code) callback(err,om)
+                  else{
+                    jErr.desc = err
+                    callback(jErr,om)
+                  }
+                })
+              }
+            },{timeout:cfg.om.timeout})
+          },
+          ()=>{
+            // return ((om.managerPosition.indexOf('VP')>=0)&&(om.managerPosition.indexOf('AVP')<0)) 
+            let r=false
+            cfg.om.approvalPosition.some(value => {
+              // console.log('ooooooooo'+value+':'+(om.managerPosition.indexOf(value)>=0) )
+              if(om.managerPosition.indexOf(value)>=0 && (value!='VP' ||
+               (value=='VP' && om.managerPosition.indexOf('AVP')<0&&om.managerPosition.indexOf('EVP')<0))) r=true
+
+              logger.debug(req,'checkPosition|'+value+':'+r)
+            })
+            return r
+          },
+          (err, n)=>{
+            // 5 seconds have passed, n = 5
+            // console.log(('result>>>>>>>'+util.jsonToText(err)+':'+util.jsonToText(n)))
+            logger.debug(req,'returnVp|'+util.jsonToText(n)+'|'+util.jsonToText(err))
+            if(err) reject(err)
+            else resolve(n)
+          }
+        )
+      }).catch(err=>{
+        if(err.code) reject(err)
+        else{
+          jErr.desc = err
+          reject(jErr)
+        }
+      })
+
+      // //ooo
+      // this.soapCreateClient().then(client=>{
+      //   let args = {OmCode:cfg.om.OmCode,Username:util.getUserName(req.header('x-userTokenId'))}
+      //   logger.debug(req,'prepareOMrequest|'+util.jsonToText(args))
+      //   client.OM_WS_GetEmployeeAndMgrByUser(args, (err, result)=>{
+      //     logger.debug(req,'omRawResponse|'+util.jsonToText(result))
+      //     if(err){
+      //       jErr.code = error.code_03004
+      //       jErr.desc = err
+      //       reject(jErr)
+      //     }else{
+      //       this.omParseString(result.OM_WS_GetEmployeeAndMgrByUserResult).then(table=>{
+      //         let om = {}
+      //         om.user=table[0].USERNAME[0]
+      //         om.email=table[0].EMAIL[0]
+      //         om.name=table[0].THNAME[0]
+      //         om.surname=table[0].THSURNAME[0]
+      //         om.department=table[0].BUNAME[0]
+      //         om.managerUser=table[0].APPROVAL_USERNAME[0]
+      //         om.managerEmail=table[0].APPROVAL_EMAIL[0]
+      //         om.managerName=table[0].APPROVAL_THNAME[0]
+      //         om.managerSurname=table[0].APPROVAL_THSURNAME[0]
+      //         om.managerPosition=table[0].APPROVAL_POSITION[0]
+
+      //         logger.debug(req,'parserOmResult|'+util.jsonToText(om))
+      //         resolve(om)
+      //       }).catch(err=>{
+      //         if(err.code) reject(err)
+      //         else{
+      //           jErr.desc = err
+      //           reject(jErr)
+      //         }
+      //       })
+      //     }
+      //   },{timeout:cfg.om.timeout})
+      // }).catch(err=>{
+      //   if(err.code) reject(err)
+      //   else{
+      //     jErr.desc = err
+      //     reject(jErr)
+      //   }
+      // })
+    }catch(err){
+      jErr.desc = err
+      reject(jErr)
+    }
+  })
+}
+
+exports.omListAllApprover=(req) => {
+  return new Promise((resolve, reject) => {
+    let jErr = {code:error.code_03001}
+    try{
+      this.soapCreateClient().then(client=>{
+        let args = {OmCode:cfg.om.OmCode,Pin:util.getUserName(req.header('x-userTokenId')),position:''}
+        logger.debug(req,'prepareOMrequest|'+util.jsonToText(args))
+        client.OM_WS_ListAllApprover(args, (err, result)=>{
+          logger.debug(req,'omRawResponse|'+util.jsonToText(result))
+          if(err){
+            jErr.code = error.code_03004
+            jErr.desc = err
+            reject(jErr)
+          }else{
+            this.omParseString(result.OM_WS_ListAllApproverResult).then(table=>{
+              let om = {}
+              // om.user=table[0].USERNAME[0]
+              // om.email=table[0].EMAIL[0]
+              // om.name=table[0].THNAME[0]
+              // om.surname=table[0].THSURNAME[0]
+              // om.department=table[0].BUNAME[0]
+              // om.managerUser=table[0].APPROVAL_USERNAME[0]
+              // om.managerEmail=table[0].APPROVAL_EMAIL[0]
+              // om.managerName=table[0].APPROVAL_THNAME[0]
+              // om.managerSurname=table[0].APPROVAL_THSURNAME[0]
 
               logger.debug(req,'parserOmResult|'+util.jsonToText(om))
               resolve(om)
@@ -244,163 +426,68 @@ user: kittilau
 pass: Ais@09Jun
 Email: 'kittilau@corp.ais900dev.org'
 *******************/
-exports.sendEmail=(to,ur) => {
+exports.sendEmail=(to,cc,ur) => {
   return new Promise((resolve, reject) => {
+    let jErr = {code:error.code_04001,desc:error.desc_04001}
     try{
-      let jErr = {code:error.code_04001,desc:error.desc_04001}
-      let urStatus = ur.urStatus
-      let urType = ur.urType
-      switch(ur.urStatus){
-        case cst.status.wDmApproval: //email Manager
-          cfg.email.options.subject = cfg.email.subject.wManagerApprove
-          urStatus = cst.status.wDmApprovalTh
-          break
-        case cst.status.dmApproved: //email Admin
-          cfg.email.options.subject = cfg.email.subject.wAdminApprove
-          urStatus = cst.status.dmApprovedTh
-          break
-        case cst.status.dmRejected: //email User
-          cfg.email.options.subject = cfg.email.subject.managerReject
-          urStatus = cst.status.dmRejectedTh
-          break
-        case cst.status.adminRejected: //email User & Manager
-          cfg.email.options.subject = cfg.email.subject.adminReject
-          urStatus = cst.status.adminRejectedTh
-          break
-        case cst.status.complete: //email User & Manager
-          cfg.email.options.subject = cfg.email.subject.urComplete
-          urStatus = cst.status.completeTh
-          break
-        default:
-          cfg.email.options.subject = cfg.email.subject.default
-          break
-      }
+      // let urStatus = ur.urStatus
+      // let urType = ur.urType
+      let urType = cst.urType[ur.urType] ? cst.urType[ur.urType]:ur.urType
+      let urStatus = cst.status[ur.urStatus] ? cst.status[ur.urStatus]:ur.urStatus
+      let rentalObj = cst.rentalObj[ur.rentalObjective] ? cst.rentalObj[ur.rentalObjective]:ur.rentalObjective
+      let emailOptions = cfg.email.options
+      emailOptions.subject = cfg.email.subject[ur.urStatus] ? cfg.email.subject[ur.urStatus]:null
 
-      switch(ur.urType){
-        case cst.urType.editContract: //email Manager
-          urType = cst.urType.editContractTh
-          break
-        case cst.urType.renewContract: //email Admin
-          urType = cst.urType.renewContractTh
-          break
-        case cst.urType.cancelContract: //email User
-          urType = cst.urType.cancelContractTh
-          break
-        case cst.urType.rental: //email User & Manager
-          urType = cst.urType.rentalTh
-          break
-        case cst.urType.move: //email User & Manager
-          urType = cst.urType.moveTh
-          break
+      if(util.isDataFound(cc)&&!util.isDataFound(emailOptions.cc)){
+        emailOptions.cc = cc //set who to send cc email to
+        jErr.cc = emailOptions.cc
       }
+      if(!util.isDataFound(emailOptions.to)) emailOptions.to = to //set who to send email to
+      logger.debug(null,'notifyEmail|To:'+emailOptions.to)
+      jErr.to = emailOptions.to
+      //replace content variable [createReadStream] **Have lost body problem when send second mail.
+      // emailOptions.html = emailOptions.html
+      //   .pipe(replaceStream('{$urId}',ur.urId))
+      //   .pipe(replaceStream('{$urType}',urType))
+      //   .pipe(replaceStream('{$rentalObj}',rentalObj))
+      //   .pipe(replaceStream('{$urDate}',mCfg.correctTime(ur.urDate)))
+      //   .pipe(replaceStream('{$urStatus}',urStatus))
+      //   .pipe(replaceStream('{$urBy}',ur.userName+' '+ur.userSurname))
 
-      if(!util.isDataFound(cfg.email.options.to)) cfg.email.options.to = to //set who to send email to
-      logger.debug(null,'notifyEmail|To:'+cfg.email.options.to)
-      jErr.to=cfg.email.options.to
-      //replace content variable
-      cfg.email.options.html = cfg.email.options.html
-        .pipe(replaceStream('{$urId}',ur.urId))
-        .pipe(replaceStream('{$urType}',urType))
-        .pipe(replaceStream('{$urDate}',mCfg.correctTime(ur.urDate)))
-        .pipe(replaceStream('{$urStatus}',urStatus))
-        .pipe(replaceStream('{$urBy}',ur.userName+' '+ur.userSurname))
+      //replace content variable [readFileSync]
+      let $document = cheerio.load(emailOptions.html)
+      $document('td.urId').text(ur.urId)
+      $document('td.urType').text(urType)
+      $document('td.rentalObj').text(rentalObj)
+      $document('td.urDate').text(mCfg.correctTime(ur.urDate))
+      $document('td.urStatus').text(urStatus)
+      $document('td.urBy').text(ur.userName+' '+ur.userSurname)
+
+      emailOptions.html = $document.html()
+      logger.debug(null,'notifyEmail|HTML:'+emailOptions.html)
 
       // send mail with defined transport object
-      cfg.email.transporter.sendMail(cfg.email.options,(err, info)=>{
-        if(err){
-          jErr.msg=err
-          logger.debug(null,'notifyEmail|Failed|'+err)
-        }else{
-          jErr.msg=info.response
-          jErr.code=error.code_04000
-          jErr.desc=error.desc_04000
-        }
-        logger.debug(null,'notifyEmail|Sent:'+info.response)
-        resolve(jErr)
-      })
+      if(emailOptions.html && emailOptions.to && emailOptions.subject){
+        cfg.email.transporter.sendMail(emailOptions,(err, info)=>{
+          if(err){
+            jErr.msg=err
+            logger.debug(null,'notifyEmail|Failed|'+err)
+          }else{
+            jErr.msg=info//.response
+            jErr.code=error.code_04000
+            jErr.desc=error.desc_04000
+            logger.debug(null,'notifyEmail|Sent:'+util.jsonToText(info))//.response)
+          }
+          resolve(jErr)
+        })
+      }else{
+        logger.debug(null,'notifyEmail|'+jErr.msg)
+        reject(jErr)
+      }
     }catch(err){
+      logger.debug(null,'notifyEmail|catch|'+err)
       jErr.msg = err
       reject(jErr)
     }
   })
 }
-
-// exports.sendEmail=(to,ur,cb) => {
-//   //Response format => {code:error.code_03001,desc:error.desc_03001,msg:err}
-//   let jErr = {code:error.code_04001,desc:error.desc_04001}
-//   try{
-//     let urStatus = ur.urStatus
-//     let urType = ur.urType
-//     switch(ur.urStatus){
-//       case cst.status.wDmApproval: //email Manager
-//         cfg.email.options.subject = cfg.email.subject.wManagerApprove
-//         urStatus = cst.status.wDmApprovalTh
-//         break
-//       case cst.status.dmApproved: //email Admin
-//         cfg.email.options.subject = cfg.email.subject.wAdminApprove
-//         urStatus = cst.status.dmApprovedTh
-//         break
-//       case cst.status.dmRejected: //email User
-//         cfg.email.options.subject = cfg.email.subject.managerReject
-//         urStatus = cst.status.dmRejectedTh
-//         break
-//       case cst.status.adminRejected: //email User & Manager
-//         cfg.email.options.subject = cfg.email.subject.adminReject
-//         urStatus = cst.status.adminRejectedTh
-//         break
-//       case cst.status.complete: //email User & Manager
-//         cfg.email.options.subject = cfg.email.subject.urComplete
-//         urStatus = cst.status.completeTh
-//         break
-//       default:
-//         cfg.email.options.subject = cfg.email.subject.default
-//         break
-//     }
-
-//     switch(ur.urType){
-//       case cst.urType.editContract: //email Manager
-//         urType = cst.urType.editContractTh
-//         break
-//       case cst.urType.renewContract: //email Admin
-//         urType = cst.urType.renewContractTh
-//         break
-//       case cst.urType.cancelContract: //email User
-//         urType = cst.urType.cancelContractTh
-//         break
-//       case cst.urType.rental: //email User & Manager
-//         urType = cst.urType.rentalTh
-//         break
-//       case cst.urType.move: //email User & Manager
-//         urType = cst.urType.moveTh
-//         break
-//     }
-
-//     if(!util.isDataFound(cfg.email.options.to)) cfg.email.options.to = to //set who to send email to
-//     logger.debug(null,'notifyEmail|To:'+cfg.email.options.to)
-//     jErr.to=cfg.email.options.to
-//     //replace content variable
-//     cfg.email.options.html = cfg.email.options.html
-//       .pipe(replaceStream('{$urId}',ur.urId))
-//       .pipe(replaceStream('{$urType}',urType))
-//       .pipe(replaceStream('{$urDate}',mCfg.correctTime(ur.urDate)))
-//       .pipe(replaceStream('{$urStatus}',urStatus))
-//       .pipe(replaceStream('{$urBy}',ur.userName+' '+ur.userSurname))
-
-//     // send mail with defined transport object
-//     cfg.email.transporter.sendMail(cfg.email.options,(err, info)=>{
-//       if(err){
-//         jErr.msg=err
-//         logger.debug(null,'notifyEmail|Failed|'+err)
-//       }else{
-//         jErr.msg=info.response
-//         jErr.code=error.code_04000
-//         jErr.desc=error.desc_04000
-//       }
-//       logger.debug(null,'notifyEmail|Sent:'+info.response)
-//       cb(jErr)
-//     })
-//   }catch(err){
-//     jErr.msg=err
-//     cb(jErr)
-//   }
-// }

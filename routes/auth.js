@@ -9,6 +9,7 @@ const error = require('../config/error');
 const util = require('../utils/bmsUtils');
 const mUser = require('../models/mUser');
 // const mRole = require('../db/role');
+const config = require('../config/config');
 
 const auth = {
 
@@ -100,7 +101,84 @@ try{
       // } else {
       //   res.json(resp.getJsonError(error.code_00002,error.desc_00002));
       // }
+  },
+
+  samlLogin: (req, res) => {
+    let cmd = 'checkParamsLogin';
+    try{
+      if(req.user.userName) {
+        //
+        // console.log(JSON.stringify(req.user));
+        // req.user.userName = 'apirat85';
+        //
+        logger.info(req,cmd+'|Pass');
+        const jWhere = { userName: req.user.userName};
+        cmd = 'chkUserAuth';
+        logger.info(req,cmd+'|where:'+JSON.stringify(jWhere));
+        mUser.findOne({where:jWhere}).then((user) => {
+          if(util.isDataFound(user)) {
+            logger.info(req,cmd+'|Found User|'+JSON.stringify(user));
+            //
+            // console.log(user);
+            let accessToken = {
+              userName : user.userName,
+              userType : user.userType,
+              userTokenId : util.getToken(user)
+            }
+            let accessTokenObj = JSON.stringify(accessToken);
+
+            var hex = convertToHex(accessTokenObj);
+            logger.summary(req,cmd+'|Success')
+            res.redirect(config.samlRedirect +'?accessToken='+ hex);
+            //
+          }else{
+            logger.info(req,cmd+'|Not Found User|'+JSON.stringify(req.user.userName));
+            let userRole = {
+              userName: req.user.userName,
+              userType: 'USER'
+            };
+            let accessToken = {
+              userName : userRole.userName,
+              userType : userRole.userType,
+              userTokenId : util.getToken(userRole)
+            };
+            let accessTokenObj = JSON.stringify(accessToken);
+
+            var hex = convertToHex(accessTokenObj);
+            logger.summary(req,cmd+'|Success')
+            res.redirect(config.samlRedirect +'?accessToken='+ hex);
+            // logger.error(req,cmd+'|Not Found User');
+            // logger.summary(req,cmd+'|Not Found User');
+            // res.redirect(config.samlRedirect);
+          }
+        }).catch((err) => {
+          logger.error(req,cmd+'|Error while check return data from DB|'+err);
+          logger.summary(req,cmd+'|Error while check return data from DB|'+err);
+          // return resp.getInvalidUser(req,res,cmd,err);
+          res.redirect(config.samlRedirect);
+        });
+      }else{
+        logger.error(req,cmd+'|Not Pass');
+        logger.summary(req,cmd+'|Not Pass');
+        // return resp.getIncompleteParameter(req,res,cmd);
+        res.redirect(config.samlRedirect);
+      }
+    }catch (err) {
+      logger.error(req,cmd+'|'+err);
+      logger.summary(req,cmd+'|'+err);
+
+      res.redirect(config.samlRedirect);
+    }
   }
+
+}
+
+function convertToHex(str){
+    var hex = '';
+    for(var i=0;i<str.length;i++) {
+        hex += ''+str.charCodeAt(i).toString(16);
+    }
+    return hex;
 }
 
 function genLoginRespObj(data){

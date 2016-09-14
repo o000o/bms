@@ -18,15 +18,73 @@ const userRequest = {
     let cmd = 'updateStatusUr'
     try{
       // insert workflow => update urStatus => send email
+      let to = null
       cmd = 'startSeries'
       async.series([
+        (callback)=>{ // check OM for VP information if dmApproved
+          if(req.body.requestData.urStatus==cst.status.dmApproved){
+            cmd = 'omGetVpUpByUser'
+            ext.omGetVpUpByUser(req).then(om=>{
+              // callback(null, om)
+
+              logger.info(req,cmd+'|OM result:'+util.jsonToText(om))
+              let upUser = {}
+              upUser.userName = om.managerUser
+              upUser.email = om.managerEmail
+              upUser.name = om.managerName
+              upUser.surname = om.managerSurname
+              upUser.userType=cst.userType.vp
+              to = om.managerEmail
+              if(!om.department) om.department=req.body.requestData.department
+
+              //Update Maneger data in table user don't care success or not just write log
+              // cmd = 'updateUserManagement'
+              logger.info(req,'prepareManagerData|'+util.jsonToText(upUser))
+              // mUser.upsert({userName:dmUser, userType:'MANAGER', email:dmEmail, createBy:'system'})
+              mUser.update(upUser,{where:{userName:upUser.userName}}).then((succeed) => {
+                logger.info(req,'updateUserManagement|Updated '+ succeed +' records')
+                if(succeed==0){  //Data not exist insert new
+                  mUser.create(upUser).then((succeed) => {
+                    logger.info(req,'updateUserManagement|Inserted:'+util.jsonToText(succeed))
+                  }).catch((err) => {
+                    logger.info(req,'updateUserManagement|InsertFailed|'+err)
+                  })
+                }
+              }).catch((err) => {
+                logger.info(req,'updateUserManagement|UpdateFailed|'+err)
+              })
+
+              //Add Workflow for VP!!!
+              cmd = 'prepareWorkflowData'
+              let workflow={urId:req.body.requestData.urId,urStatus:cst.status.wVpApproval,
+                updateBy:om.managerUser,department:om.department}
+              logger.info(req,cmd+'|'+util.jsonToText(workflow))
+
+              cmd = 'createVpWorkflow'
+              mUrWf.create(workflow).then((succeed) => {
+                logger.info(req,cmd+'|AddedWorkflow:'+util.jsonToText(succeed))
+                callback(null, succeed)
+              }).catch((dberr) => {
+                logger.error(req,cmd+'|'+dberr)
+                logger.summary(req,cmd+'|'+error.desc_01001)
+                callback(dberr,'Error when create mUrWf')
+              })
+            }).catch(oerr=>{
+              // logger.error(req,cmd+'|'+util.jsonToText(oerr))
+              // resp.getOmError(req,res,cmd,oerr)
+              logger.error(req,cmd+'|'+util.jsonToText(oerr))
+              logger.summary(req,cmd+'|'+oerr.desc)
+              callback(oerr,'Error when call OM')
+            })
+          }else callback(null,'not insert VP')
+        },
         (callback)=>{ // add workflow => config.adminDepartment = 'Admin Team' (front send this)
           cmd = 'createWorkflow'
           mUrWf.create(req.body.requestData).then((succeed) => {
             logger.info(req,cmd+'|AddedWorkflow:'+util.jsonToText(succeed))
             callback(null, succeed)
           }).catch((dberr) => {
-            logger.error(req,cmd+'|Error when create mUrWf|'+dberr)
+            logger.error(req,cmd+'|'+dberr)
             logger.summary(req,cmd+'|'+error.desc_01001)
             callback(dberr,'Error when create mUrWf')
           })
@@ -58,11 +116,17 @@ const userRequest = {
           logger.debug(req,'notifyEmail|'+cfg.email.notify)
           if(cfg.email.notify){ //Send Email?
             wcmd = 'startWaterfall'
-            async.waterfall([
-              (wcallback)=>{ //gen To
+            async.waterfall([(wcallback)=>{ //gen To
                 wcmd = 'chkUrStatus' //to know who to send email to
+                let cc = null
+                // let to = null
                 switch(req.body.requestData.urStatus){
-                  case cst.status.dmApproved: //email Admin group query user_management
+                  case cst.status.dmApproved: //email VP
+                    //ooo  call OM to get VP Email and Save into DB user
+                    if(to) wcallback(null,to,cc)
+                    else wcallback('Emails Not Found', null)
+                    break
+                  case cst.status.vpApproved: //email Admin group query user_management
                     //search all admin emails from users table
                     wcmd = 'findAdminEmails'
                     mUser.findAll({where:{userType:cst.userType.centerAdmin},attributes:['email']})
@@ -70,9 +134,9 @@ const userRequest = {
                       logger.debug(req,wcmd+'|'+util.jsonToText(emails))
                       if(util.isDataFound(emails)){
                         wcmd = 'genEmailTo'
-                        let to = ''
+                        to = ''
                         emails.forEach((value) => {if(util.isDataFound(value.email)) to=to+value.email+';'})
-                        wcallback(null, to)
+                        wcallback(null,to,cc)
                       }else wcallback('Emails Not Found', null)
                     }).catch((werr) => {
                       logger.error(req,wcmd+'|'+werr)
@@ -81,11 +145,57 @@ const userRequest = {
                     break
                   case cst.status.dmRejected: //email User query UR
                     wcmd = 'genEmailTo'
-                    wcallback(null, '{$userEmail}') //replace after query UR
+                    wcallback(null, '{$userEmail}',cc) //replace after query UR
                     break
-                  case cst.status.adminRejected: //email User & Manager
-                  case cst.status.complete: //email User & Manager
-                    let to = '{$userEmail};' //replace after query UR
+                  case cst.status.adminRejected: //email User & Manager & cc VP
+                  case cst.status.complete: //email User & Manager & cc VP
+                    to = '{$userEmail};' //replace after query UR
+                    wcmd = 'findManagerAndVpName'
+                    mUrWf.findAll({group:['update_by','ur_status'],attributes:['updateBy','urStatus'],
+                      where:{urId:req.body.requestData.urId,$or:[{urStatus:cst.status.dmApproved},{urStatus:cst.status.vpApproved}]}
+                    }).then((updateBy) => {
+                      logger.debug(req,wcmd+'|'+util.jsonToText(updateBy))
+                      if(util.isDataFound(updateBy)){
+                        wcmd = 'genWhereUser'
+                        let where = {$or:[]}
+                        updateBy.forEach(value => {
+                            where.$or.push({userName:value.updateBy})
+                        })
+                        logger.debug(req,wcmd+'|'+util.jsonToText(where))
+                        wcmd = 'findManagerAndVpEmail'
+                        mUser.findAll({where:where,attributes:['email','userType'],
+                          group:['username','email','user_type']})
+                        .then((email) => {
+                          logger.debug(req,wcmd+'|'+util.jsonToText(email))
+                          if(util.isDataFound(email)){
+                            wcmd = 'genEmailTo'
+                            email.forEach(value => {
+                              if(cst.userGroup.manager.indexOf(value.userType)>=0) to=to+value.email+';'
+                              if(cst.userGroup.vp.indexOf(value.userType)>=0){
+                                if(cc) cc=cc+value.email+';'
+                                else cc=value.email+';'
+                              }
+                            })
+                            wcallback(null,to,cc)
+                          }else{
+                            logger.info(req,wcmd+'|Email Not Found')
+                            wcallback(null,to,cc)
+                          }
+                        }).catch((werr) => { // can't find manager send email to user only
+                          logger.error(req,wcmd+'|'+werr)
+                          wcallback(null,to,cc)
+                        })
+                      }else{
+                        logger.info(req,wcmd+'|Manager Not Found')
+                        wcallback(null,to,cc)
+                      }
+                    }).catch((werr) => { // can't find manager send email to user only
+                      logger.error(req,wcmd+'|'+werr)
+                      wcallback(null,to,cc)
+                    })
+                    break
+                  case cst.status.vpRejected: //email User & Manager
+                    to = '{$userEmail};' //replace after query UR
                     wcmd = 'findManagerName'
                     mUrWf.findOne({attributes:['updateBy'],
                       where:{urId:req.body.requestData.urId,urStatus:cst.status.dmApproved}
@@ -99,22 +209,22 @@ const userRequest = {
                           if(util.isDataFound(email.email)){
                             wcmd = 'genEmailTo'
                             to = to+email.email
-                            wcallback(null,to)
+                            wcallback(null,to,cc)
                           }else{
-                            logger.info(req,wcmd+'|Email Not Found')
-                            wcallback(null,to)
+                            logger.info(req,wcmd+'|Manager Email Not Found')
+                            wcallback(null,to,cc)
                           }
                         }).catch((werr) => { // can't find manager send email to user only
                           logger.error(req,wcmd+'|'+werr)
-                          wcallback(null,to)
+                          wcallback(null,to,cc)
                         })
                       }else{
                         logger.info(req,wcmd+'|Manager Not Found')
-                        wcallback(null,to)
+                        wcallback(null,to,cc)
                       }
                     }).catch((werr) => { // can't find manager send email to user only
                       logger.error(req,wcmd+'|'+werr)
-                      wcallback(null,to)
+                      wcallback(null,to,cc)
                     })
                     break
                   default:
@@ -122,8 +232,9 @@ const userRequest = {
                     break                
                 }
               },
-              (to,wcallback)=>{ //query UR
+              (to,cc,wcallback)=>{ //query UR
                 wcmd = 'chkTo'
+                logger.debug(req,wcmd+'|To:'+to+'|cc:'+cc)
                 if(to){ //check if we have email to send
                   wcmd = 'findUR'
                   let jWhere = {urId:req.body.requestData.urId}
@@ -135,7 +246,7 @@ const userRequest = {
                       wcmd = 'replaceUserEmail'
                       to = to.replace('{$userEmail}', db.userEmail)
                       logger.debug(req,wcmd+'|'+to)
-                      wcallback(null,to,db)
+                      wcallback(null,to,cc,db)
                     }else{
                       wcallback('UR Not Found',null)
                     }
@@ -150,15 +261,15 @@ const userRequest = {
                 }
               },
 
-              (to,ur,wcallback)=>{ //Send Email
+              (to,cc,ur,wcallback)=>{ //Send Email
                 wcmd = 'sendEmail'
-                logger.info(req,wcmd+'|To:'+to) // Remove after use test email
-                logger.debug(req,wcmd+'|To:'+to+'|UR:'+util.jsonToText(ur))
-                ext.sendEmail(to,ur).then(mresult=>{
+                logger.info(req,wcmd+'|To:'+to+'|cc:'+cc) // Remove after use test email
+                logger.debug(req,wcmd+'|To:'+to+'|cc:'+cc+'|UR:'+util.jsonToText(ur))
+                ext.sendEmail(to,cc,ur).then(mresult=>{
                   logger.info(req,'notifyEmail|'+util.jsonToText(mresult))
                   wcallback(null,mresult)
                 }).catch(merr=>{
-                  logger.error(req,'notifyEmail|'+util.jsonToText(merr))
+                  logger.error(req,'notifyEmail|'+util.inspect(merr))
                   wcallback(null,merr)
                 })
               }], (werr, wresult)=>{
@@ -219,22 +330,29 @@ const userRequest = {
       if(req.body.requestData.urType && req.body.requestData.urStatus && req.header('x-userTokenId')){
         cmd = 'setUserRight'
         // admin group can create every type UR
+        // console.log('oooooo1oooooo')
         let userRight = (cst.userGroup.admin.indexOf(util.getUserType(req.header('x-userTokenId')))>=0) ? 1:0
         let upUser = {}
         cmd = 'selectUrType'
+        // console.log('oooooo2oooooo')
         switch(req.body.requestData.urType){
           case cst.urType.move: //everyone can
           case cst.urType.rental: //everyone can
           //insert UR add workflow query OM send email (manager)  query OM send email
-            if(userRight) upUser.userType=cst.userType.managerAdmin
-            else upUser.userType=cst.userType.manager
-            userRight = 1
+            // if(userRight) upUser.userType=cst.userType.managerAdmin
+            // else upUser.userType=cst.userType.manager
+            // userRight = 1
           case cst.urType.renewContract: //only admin group
           //insert UR add workflow(managerAdmin) query OM send email
           case cst.urType.cancelContract: //only admin group
           //insert UR add workflow(managerAdmin) query OM send email
-            if(userRight && !util.isDataFound(upUser.userType)) upUser.userType=cst.userType.managerAdmin
+            if(userRight) upUser.userType=cst.userType.managerAdmin
+            else upUser.userType=cst.userType.manager
+            userRight = 1
             break
+          //Old flow only amdin can renew and cancel
+            // if(userRight && !util.isDataFound(upUser.userType)) upUser.userType=cst.userType.managerAdmin
+            // break
           case cst.urType.editContract://no need to add workflow just insert UR
             if(userRight){
               userRight = 0
@@ -263,6 +381,7 @@ const userRequest = {
             break
         }
 
+// console.log('oooooo3oooooo'+userRight)//+'|'+util.jsonToText(req))
         //call OM => save User & UR & Workflow => async.waterfall??
         if(userRight){
           cmd = 'omGetEmployeeAndMgrByUser'
@@ -306,10 +425,10 @@ const userRequest = {
               logger.info(req,cmd+'|'+util.jsonToText(succeed))
               logger.info(req,'notifyEmail|'+cfg.email.notify)
               if(cfg.email.notify){ //Send Email?
-                ext.sendEmail(result.managerEmail,succeed).then(result=>{
-                  logger.info(req,'notifyEmail|'+util.jsonToText(result))
-                }).catch(err=>{
-                  logger.error(req,'notifyEmail|'+util.jsonToText(err))
+                ext.sendEmail(om.managerEmail,succeed).then(mresult=>{
+                  logger.info(req,'notifyEmail|'+util.jsonToText(mresult))
+                }).catch(merr=>{
+                  logger.error(req,'notifyEmail|'+util.jsonToText(merr))
                 })
               }
               resp.getSuccess(req,res,cmd,succeed)
@@ -322,6 +441,10 @@ const userRequest = {
             // logger.error(req,cmd+'|'+util.jsonToText(err))
             resp.getOmError(req,res,cmd,err)
           })
+        // }else{
+        //   let err = 'Something is wrong.'
+        //   logger.error(req,cmd+'|'+err)
+        //   resp.getInternalError(req,res,cmd,err)
         }
       }else{
         let err ='No urType or urStatus'

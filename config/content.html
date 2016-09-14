@@ -1,63 +1,116 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>BMS E-Mail</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+        <title>
+            BMS E-Mail
+        </title>
         <style type="text/css">
         body {
-          margin: 0; 
-          padding: 0;
-          //background-color: #C1FFC1;
+              margin: 0; 
+              padding: 0;
         }
         .tbtitle {
-        font-weight: bold;
-        text-align: right;
-        width: 30%;
-        //background-color: #B4EEB4;
+            font-weight: bold;
+            text-align: right;
+            width: 30%;
         }
-        .tbcontent {
-        //border: 1px solid #698B69;
+        .tbLogo {
         border: 1px solid;
         border-collapse: collapse; 
         width: 600px;
         }
+        .tbcontent {
+            margin-left: 50px; 
+        border-collapse: collapse; 
+        width: 600px;
+        }
+        .para {
+             margin-left: 50px; 
+        }
         </style>
     </head>
-<body class="body">
-<p>แจ้ง ข้อมูลเอกสารเพื่อดำเนินการต่อมีรายละเอียดดังนี้</p>
-<table class="tbcontent">
-  <tr>
-    <td>
-    <td>   
-    <table width="100%">
-    <tr>
-    <td class="tbtitle">เลขที่เอกสาร : </td>
-    <td>{$urId}</td>
-    </tr>
-    <tr>
-    <td class="tbtitle">รายละเอียดเอกสาร : </td>
-    <td>{$urType}</td>
-    </tr>
-    <tr>
-    <td class="tbtitle">วันที่ยื่นคำร้อง : </td>
-    <td>{$urDate}</td>
-    </tr>
-    <tr>
-    <td class="tbtitle">สถานะเอกสาร : </td>
-    <td>{$urStatus}</td>
-    </tr>
-    <tr>
-    <td class="tbtitle">ผู้สร้างเอกสาร : </td>
-    <td>{$urBy}</td>
-    </tr>
-    </table>
-  </td>
-  </tr>
-  </td>
-  </tr>
-</table>
-<p>เข้าระบบคลิกที่นี่ <a href="http://adminportal.ais.co.th/building">http://adminportal.ais.co.th/building/</a>
-<p>จึงเรียนมาเพื่อดำเนินการ</br>Building Management System</br>MIMO Tech</p>
-
-</body>
+    <body>
+        <table class="tbLogo">
+            <!-- <table style="border: 1px solid; border-collapse: collapse; width: 600px;"> -->
+            <tr>
+                <td>
+                    <img align="right" src="cid:bmsLogo">
+                    </img>
+                </td>
+            </tr>
+        </table>
+        <p class="para">
+            แจ้ง ข้อมูลเอกสารเพื่อดำเนินการต่อมีรายละเอียดดังนี้
+        </p>
+        <table class="tbcontent">
+            <tr>
+                <td>
+                    <td>
+                        <table width="100%">
+                            <tr>
+                                <td class="tbtitle">
+                                    เลขที่เอกสาร :
+                                </td>
+                                <td class="urId">
+                                    {$urId}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tbtitle">
+                                    รายละเอียดเอกสาร :
+                                </td>
+                                <td class="urType">
+                                    {$urType}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tbtitle">
+                                    วัตถุประสงค์ :
+                                </td>
+                                <td class="rentalObj">
+                                    {$rentalObj}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tbtitle">
+                                    วันที่ยื่นคำร้อง :
+                                </td>
+                                <td class="urDate">
+                                    {$urDate}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tbtitle">
+                                    สถานะเอกสาร :
+                                </td>
+                                <td class="urStatus">
+                                    {$urStatus}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tbtitle">
+                                    ผู้สร้างเอกสาร :
+                                </td>
+                                <td class="urBy">
+                                    {$urBy}
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </td>
+            </tr>
+        </table>
+    </body>
 </html>
+<p class="para">
+    เข้าระบบคลิกที่นี่
+    <a href="http://adminportal.ais.co.th/building">
+        http://adminportal.ais.co.th/building/
+    </a>
+    <p>
+        จึงเรียนมาเพื่อดำเนินการ
+    </p>
+</p>
+Building Management System
+MIMO Tech

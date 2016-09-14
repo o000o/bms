@@ -206,6 +206,7 @@ const document = {
             if (util.isDataFound(req.body.requestData.locationCriteria)) {
                 req.body.requestData.locationCriteria.model = mBuildingLocation
                 req.body.requestData.locationCriteria.as = cst.models.location
+                req.body.requestData.locationCriteria.required = true
                 if (!util.isDataFound(req.body.requestData.locationCriteria.attributes) && JSON.stringify(req.body.requestData.locationCriteria.attributes) != '[]') {
                     req.body.requestData.locationCriteria.attributes = {
                         exclude: ['documentId']
@@ -216,6 +217,7 @@ const document = {
             if (util.isDataFound(req.body.requestData.areaCriteria)) {
                 req.body.requestData.areaCriteria.model = mBuildingArea
                 req.body.requestData.areaCriteria.as = cst.models.locationArea
+                req.body.requestData.areaCriteria.required = true
                 if (!util.isDataFound(req.body.requestData.areaCriteria.attributes) && JSON.stringify(req.body.requestData.areaCriteria.attributes) != '[]') {
                     req.body.requestData.areaCriteria.attributes = {
                         exclude: ['documentId']
@@ -226,6 +228,7 @@ const document = {
             if (util.isDataFound(req.body.requestData.insuranceCriteria)) {
                 req.body.requestData.insuranceCriteria.model = mInsurance
                 req.body.requestData.insuranceCriteria.as = cst.models.insurance
+                req.body.requestData.insuranceCriteria.required = true
                 if (!util.isDataFound(req.body.requestData.insuranceCriteria.attributes) && JSON.stringify(req.body.requestData.insuranceCriteria.attributes) != '[]') {
                     req.body.requestData.insuranceCriteria.attributes = {
                         exclude: ['documentId']
@@ -236,12 +239,44 @@ const document = {
             if (util.isDataFound(req.body.requestData.contractCriteria)) {
                 req.body.requestData.contractCriteria.model = mContract
                 req.body.requestData.contractCriteria.as = cst.models.contract
+                req.body.requestData.contractCriteria.required = true
                 if (!util.isDataFound(req.body.requestData.contractCriteria.attributes) && JSON.stringify(req.body.requestData.contractCriteria.attributes) != '[]') {
                     req.body.requestData.contractCriteria.attributes = {
                         exclude: ['documentId']
                     }
                 }
                 jWhere.include.push(req.body.requestData.contractCriteria)
+            }
+            if (jWhere) {
+                jWhere.include = [{
+                    model: mBuildingLocation,
+                    as: cst.models.location,
+                    required: false,
+                    attributes: {
+                        exclude: ['documentId']
+                    }
+                }, {
+                    model: mBuildingArea,
+                    as: cst.models.locationArea,
+                    required: false,
+                    attributes: {
+                        exclude: ['documentId']
+                    }
+                }, {
+                    model: mInsurance,
+                    as: cst.models.insurance,
+                    required: false,
+                    attributes: {
+                        exclude: ['documentId']
+                    }
+                }, {
+                    model: mContract,
+                    as: cst.models.contract,
+                    required: false,
+                    attributes: {
+                        exclude: ['documentId']
+                    }
+                }]
             }
             // } else {
             //     jWhere.include = [{
@@ -253,7 +288,6 @@ const document = {
             //         }
             //     }]
             // }
-
             //add paging in to jwhere
             jWhere.offset = jLimit.offset
             jWhere.limit = jLimit.limit
