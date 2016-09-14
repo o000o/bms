@@ -298,7 +298,8 @@ exports.omGetVpUpByUser=(req) => {
             cfg.om.approvalPosition.some(value => {
               // console.log('ooooooooo'+value+':'+(om.managerPosition.indexOf(value)>=0) )
               if(om.managerPosition.indexOf(value)>=0 && (value!='VP' ||
-               (value=='VP' && om.managerPosition.indexOf('AVP')<0&&om.managerPosition.indexOf('EVP')<0))) r=true
+               (value=='VP' && om.managerPosition.indexOf('AVP')<0&&om.managerPosition.indexOf('SVP')<0
+                &&om.managerPosition.indexOf('EVP')<0&&om.managerPosition.indexOf('SEVP')<0))) r=true
 
               logger.debug(req,'checkPosition|'+value+':'+r)
             })

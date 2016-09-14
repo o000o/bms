@@ -209,7 +209,9 @@ const vendorProfile = {
             if (util.isDataFound(req.body.requestData.vendorContactCriteria)) {
                 req.body.requestData.vendorContactCriteria.model = mVendorContact
                 req.body.requestData.vendorContactCriteria.as = cst.models.vendorContacts
-                req.body.requestData.vendorContactCriteria.required = true
+		if (util.isDataFound(req.body.requestData.vendorContactCriteria.where)) {
+                	req.body.requestData.vendorContactCriteria.required = true
+		}
                 if (!util.isDataFound(req.body.requestData.vendorContactCriteria.attributes) && JSON.stringify(req.body.requestData.vendorContactCriteria.attributes) != '[]') {
                     req.body.requestData.vendorContactCriteria.attributes = {
                         exclude: ['vendorId']

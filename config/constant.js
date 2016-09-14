@@ -2,6 +2,8 @@
 
 const constant = module.exports = {}
 
+constant.urId = 'adjustContract' //Fake urId for editContract
+
 //workflow & UR status
 constant.status = {}
 constant.status.wDmApproval = 'W_DM_APPROVAL'

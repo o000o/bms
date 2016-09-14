@@ -43,7 +43,7 @@ config.log.logTime = 15
 config.log.db = true
 config.log.info = true
 config.log.error = true
-config.log.queryResult = false
+config.log.queryResult = true
 config.log.debug = false
 
 // Token
@@ -72,7 +72,7 @@ config.om.options = {wsdl_options:{
     password: 'OM@stg!#2014',
     domain: 'corp-ais900dev'
 }}
-config.om.approvalPosition = ['VP','EVP'] //Which Position is required to approve UR after DM approved
+config.om.approvalPosition = ['VP','SVP','EVP','SEVP','C Level'] //Which Position is required to approve UR after DM approved
 
 // Email Notification to DM
 config.email = {}

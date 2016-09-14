@@ -95,6 +95,7 @@ router.get('/document/download', document.archivDownload)
 router.post('/document', document.add)
 router.delete('/document/:documentId', document.delete)
 router.post('/getDocument', document.queryByCriteria)
+router.put('/updateULStatus', document.updateULStatus)
 
 // ============================================================================
 // Department

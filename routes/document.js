@@ -206,7 +206,9 @@ const document = {
             if (util.isDataFound(req.body.requestData.locationCriteria)) {
                 req.body.requestData.locationCriteria.model = mBuildingLocation
                 req.body.requestData.locationCriteria.as = cst.models.location
-                req.body.requestData.locationCriteria.required = true
+                if (util.isDataFound(req.body.requestData.locationCriteria.where)) {
+                    req.body.requestData.locationCriteria.required = true
+                }
                 if (!util.isDataFound(req.body.requestData.locationCriteria.attributes) && JSON.stringify(req.body.requestData.locationCriteria.attributes) != '[]') {
                     req.body.requestData.locationCriteria.attributes = {
                         exclude: ['documentId']
@@ -217,7 +219,9 @@ const document = {
             if (util.isDataFound(req.body.requestData.areaCriteria)) {
                 req.body.requestData.areaCriteria.model = mBuildingArea
                 req.body.requestData.areaCriteria.as = cst.models.locationArea
-                req.body.requestData.areaCriteria.required = true
+                if (util.isDataFound(req.body.requestData.areaCriteria.where)) {
+                    req.body.requestData.areaCriteria.required = true
+                }
                 if (!util.isDataFound(req.body.requestData.areaCriteria.attributes) && JSON.stringify(req.body.requestData.areaCriteria.attributes) != '[]') {
                     req.body.requestData.areaCriteria.attributes = {
                         exclude: ['documentId']
@@ -228,7 +232,9 @@ const document = {
             if (util.isDataFound(req.body.requestData.insuranceCriteria)) {
                 req.body.requestData.insuranceCriteria.model = mInsurance
                 req.body.requestData.insuranceCriteria.as = cst.models.insurance
-                req.body.requestData.insuranceCriteria.required = true
+                if (util.isDataFound(req.body.requestData.insuranceCriteria.where)) {
+                    req.body.requestData.insuranceCriteria.required = true
+                }
                 if (!util.isDataFound(req.body.requestData.insuranceCriteria.attributes) && JSON.stringify(req.body.requestData.insuranceCriteria.attributes) != '[]') {
                     req.body.requestData.insuranceCriteria.attributes = {
                         exclude: ['documentId']
@@ -239,7 +245,9 @@ const document = {
             if (util.isDataFound(req.body.requestData.contractCriteria)) {
                 req.body.requestData.contractCriteria.model = mContract
                 req.body.requestData.contractCriteria.as = cst.models.contract
-                req.body.requestData.contractCriteria.required = true
+                if (util.isDataFound(req.body.requestData.contractCriteria.where)) {
+                    req.body.requestData.contractCriteria.required = true
+                }
                 if (!util.isDataFound(req.body.requestData.contractCriteria.attributes) && JSON.stringify(req.body.requestData.contractCriteria.attributes) != '[]') {
                     req.body.requestData.contractCriteria.attributes = {
                         exclude: ['documentId']
@@ -317,6 +325,51 @@ const document = {
         } catch (err) {
             logger.error(req, cmd + '|' + err)
             return resp.getInternalError(req, res, cmd, err)
+        }
+    },
+    updateULStatus: (req, res) => {
+        let cmd = 'UpdateUploadStatus';
+        try {
+            // mDocument.bulkCreate(req.body.requestData.uploadStatusList, {
+            //     validate: true
+            // }).then((succeed) => {
+            //     logger.info(req, cmd + '|' + JSON.stringify(succeed));
+            //     return resp.getSuccess(req, res, cmd);
+            // }).catch((err) => {
+            //     logger.error(req, cmd + '|' + err);
+            //     logger.summary(req, cmd + '|' + error.desc_01001);
+            //     res.json(resp.getJsonError(error.code_01001, error.desc_01001, err));
+            // })
+            if (!util.isDataFound(req.body.requestData.uploadStatusList)) {
+                logger.error(req, cmd + '|Error:Incomplete parameter')
+                return resp.getIncompleteParameter(req, res, cmd)
+            }
+            req.body.requestData.uploadStatusList.forEach((statusObj) => {
+                logger.info(req, cmd + '|Data:' + jsUtil.inspect(statusObj, {
+                    showHidden: false,
+                    depth: null
+                }))
+                mDocument.update({
+                    uploadStatus: statusObj.uploadStatus
+                }, {
+                    where: {
+                        documentRename: statusObj.documentRename
+                    }
+                }).then((succeed) => {
+                    let updated = 'Update success ' + succeed + ' rows'
+                    if (succeed > 0) {
+                        logger.info(req, cmd + '|' + updated)
+                    } else {
+                        logger.error(req, cmd + '|Error:Data not found')
+                    }
+                }).catch((dberr) => {
+                    logger.error(req, cmd + '|Error while update upload status|' + dberr)
+                })
+            })
+            resp.getSuccess(req, res, cmd)
+        } catch (err) {
+            logger.error(req, cmd + '|' + err);
+            return resp.getInternalError(req, res, cmd, err);
         }
     }
 }

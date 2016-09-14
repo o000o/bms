@@ -60,8 +60,12 @@ const location = {
             //add paging in to jwhere
             jWhere.offset = jLimit.offset
             jWhere.limit = jLimit.limit
+            let required = false
             if (util.isDataFound(req.body.requestData.areaCriteria)) {
                 jWhere.include = JSON.parse(JSON.stringify(req.body.requestData.areaCriteria))
+                if (util.isDataFound(req.body.requestData.areaCriteria.where)) {
+                    required = true
+                }
                 if (!util.isDataFound(req.body.requestData.areaCriteria.attributes) && JSON.stringify(req.body.requestData.areaCriteria.attributes) != '[]') {
                     jWhere.include.attributes = {
                         exclude: ['buildingId']
@@ -76,27 +80,27 @@ const location = {
             //add include area into jWhere
             jWhere.include.model = mArea
             jWhere.include.as = cst.models.locationAreas
-            jWhere.include.required = true
-            //add include Detail into jWhere
-            // if (util.isDataFound(jWhere.include.attributes)) {
-            //     jWhere.include.include = {}
-            //     jWhere.include.include.model = mDetail
-            //     jWhere.include.include.as = cst.models.areaDetails
-            //     jWhere.include.include.required = false
-            //     jWhere.include.include.attributes = {
-            //         exclude: ['buildingAreaId']
-            //     }
-            // }
+            jWhere.include.required = required
+                //add include Detail into jWhere
+                // if (util.isDataFound(jWhere.include.attributes)) {
+                //     jWhere.include.include = {}
+                //     jWhere.include.include.model = mDetail
+                //     jWhere.include.include.as = cst.models.areaDetails
+                //     jWhere.include.include.required = false
+                //     jWhere.include.include.attributes = {
+                //         exclude: ['buildingAreaId']
+                //     }
+                // }
             logger.info(req, cmd + '|Criteria:' + jsUtil.inspect(jWhere, {
-                showHidden: false,
-                depth: null
-            }))
-            /*****Note*****
-            Error:Converting circular structure to JSON 
-            When use JSON.stringify
-            With jWhere
-            Because model is an object but NOT JSON object 
-            *********/
+                    showHidden: false,
+                    depth: null
+                }))
+                /*****Note*****
+                Error:Converting circular structure to JSON 
+                When use JSON.stringify
+                With jWhere
+                Because model is an object but NOT JSON object 
+                *********/
             cmd = 'FindLocation'
             mLocation.findAndCountAll(jWhere).then((db) => { //{include:[{all:true,nested:true}]}
                 cmd = 'chkLocationData'
@@ -137,95 +141,103 @@ const location = {
                 }
             }
             cmd = 'GenCriteria'
-                let jWhere = {}
-                if (util.isDataFound(req.body.requestData.areaCriteria)) {
-                    jWhere = JSON.parse(JSON.stringify(req.body.requestData.areaCriteria))
-                    if (!util.isDataFound(req.body.requestData.areaCriteria.attributes) && JSON.stringify(req.body.requestData.areaCriteria.attributes) != '[]') {
+            let jWhere = {}
+            let required = false
+            if (util.isDataFound(req.body.requestData.areaCriteria)) {
+                jWhere = JSON.parse(JSON.stringify(req.body.requestData.areaCriteria))
+                    /*if (!util.isDataFound(req.body.requestData.areaCriteria.attributes) && JSON.stringify(req.body.requestData.areaCriteria.attributes) != '[]') {
                         jWhere.attributes = {
                             exclude: ['buildingId']
                         }
-                    }
-                }else{
-                	jWhere.attributes = {
-                            exclude: ['buildingId']
-                        }
+                    }*/
+            }
+            /*else {
+                           jWhere.attributes = {
+                               exclude: ['buildingId']
+                           }
+                       }*/
+            //add paging in to jwhere
+            jWhere.offset = jLimit.offset
+            jWhere.limit = jLimit.limit
+            let where = {}
+            if (util.isDataFound(req.body.requestData.locationCriteria)) {
+                where = JSON.parse(JSON.stringify(req.body.requestData.locationCriteria))
+                if (util.isDataFound(req.body.requestData.locationCriteria.where)) {
+                    required = true
                 }
-
-                //add paging in to jwhere
-                jWhere.offset = jLimit.offset
-                jWhere.limit = jLimit.limit
-                
-                let where = {}
-                if (util.isDataFound(req.body.requestData.locationCriteria)) {
-                	where = JSON.parse(JSON.stringify(req.body.requestData.locationCriteria))
-                } 
-
-                jWhere.include = []
+            }
+            jWhere.include = []
                 //add include location
-                where.model = mLocation
-                where.as = cst.models.location
-                where.required = false
-                jWhere.include.push(where)
-
+            where.model = mLocation
+            where.as = cst.models.location
+            where.required = required
+            jWhere.include.push(where)
                 //add include area detail
-                // where = {}
-                // where.model = mDetail
-                // where.as = cst.models.areaDetails
-                // where.required = false
-                // where.attributes = {
-                //     exclude: ['buildingAreaId']
-                // }
-                // jWhere.include.push(where)
-
-		//add include Movement
-                where = {}
-                where.model = mMovement
-                where.as = cst.models.movements
-                where.required = false
-                where.attributes = {
-                    exclude: ['buildingAreaId']
+            where = {}
+            where.model = mDetail
+            where.as = cst.models.areaDetails
+            where.required = false
+            where.attributes = {
+                exclude: ['buildingAreaId']
+            }
+            jWhere.include.push(where)
+                //add include Movement
+            where = {}
+            where.model = mMovement
+            where.as = cst.models.movements
+            where.required = false
+            where.attributes = {
+                exclude: ['buildingAreaId']
+            }
+            jWhere.include.push(where)
+                //add include UR
+            where = {}
+            required = false
+            if (util.isDataFound(req.body.requestData.urCriteria)) {
+                where = JSON.parse(JSON.stringify(req.body.requestData.urCriteria))
+                if (util.isDataFound(req.body.requestData.urCriteria.where)) {
+                    required = true
                 }
-                jWhere.include.push(where)
-
-		//add include UR
-                where = {}
-		where.through={model:mMovement, as:cst.models.movements, attributes:[]}
-                where.model = mUR
-                where.as = cst.models.urs
-                where.required = false
-                where.attributes = {
-                    exclude: ['buildingAreaId']
+            }
+            where.through = {
+                model: mMovement,
+                as: cst.models.movements,
+                attributes: []
+            }
+            where.model = mUR
+            where.as = cst.models.urs
+            where.required = required
+            where.attributes = {
+                exclude: ['buildingAreaId']
+            }
+            jWhere.include.push(where)
+            logger.info(req, cmd + '|Criteria:' + jsUtil.inspect(jWhere, {
+                    showHidden: false,
+                    depth: null
+                }))
+                /*****Note*****
+                Error:Converting circular structure to JSON 
+                When use JSON.stringify
+                With jWhere
+                Because model is an object but NOT JSON object 
+                *********/
+            cmd = 'FindArea'
+            mArea.findAndCountAll(jWhere).then((db) => { //{include:[{all:true,nested:true}]}
+                cmd = 'ChkAreaData'
+                logger.query(req, cmd + '|QueryResponse:' + JSON.stringify(db))
+                if (db.count > 0) return resp.getSuccess(req, res, cmd, {
+                    "totalRecord": db.count,
+                    "buildingAreaList": db.rows
+                })
+                else {
+                    logger.summary(req, cmd + '|Error:Not Found Area')
+                    res.json(resp.getJsonError(error.code_01003, error.desc_01003, db))
                 }
-
-                jWhere.include.push(where)
-                
-                logger.info(req, cmd + '|Criteria:' + jsUtil.inspect(jWhere, {
-                        showHidden: false,
-                        depth: null
-                    }))
-                    /*****Note*****
-                    Error:Converting circular structure to JSON 
-                    When use JSON.stringify
-                    With jWhere
-                    Because model is an object but NOT JSON object 
-                    *********/
-                cmd = 'FindArea'
-                    mArea.findAndCountAll(jWhere).then((db) => { //{include:[{all:true,nested:true}]}
-                        cmd = 'ChkAreaData'
-                        logger.query(req, cmd + '|QueryResponse:' + JSON.stringify(db))
-                        if (db.count > 0) return resp.getSuccess(req, res, cmd, {
-                            "totalRecord": db.count,
-                            "buildingAreaList": db.rows
-                        })
-                        else {
-                            logger.summary(req, cmd + '|Error:Not Found Area')
-                            res.json(resp.getJsonError(error.code_01003, error.desc_01003, db))
-                        }
-                    }).catch((err) => {
-                        logger.error(req, cmd + '|Error:' + err)
-                        logger.summary(req, cmd + '|Error:' + error.desc_01002)
-                        res.json(resp.getJsonError(error.code_01002, error.desc_01002, err))
-                    })
+            }).catch((err) => {
+                logger.error(req, cmd + '|Error:' + err)
+                logger.summary(req, cmd + '|Error:' + error.desc_01002)
+                res.json(resp.getJsonError(error.code_01002, error.desc_01002, err))
+            })
         } catch (err) {
             logger.error(req, cmd + '|Error:' + err)
             return resp.getInternalError(req, res, cmd, err)
