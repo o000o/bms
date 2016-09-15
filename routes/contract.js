@@ -672,80 +672,83 @@ const contract = {
                 cmd = 'checkContractBuildingTasks'
                 if (util.isDataFound(asyncTasks)) {
                     logger.info(req, cmd + '|Have Tasks')
-                    let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.status.editContractComplete
-                    logger.debug(req, cmd + '|cStatus:' + cStatus + '|urStatusFound:' + util.isDataFound(req.body.requestData.urStatus))
-                    cmd = 'pushUpdateUrStatusTask'
-                    edit.countPush = edit.countPush + 1
-                    asyncTasks.push((callback) => {
-                        let urWhere = {
-                            urId: req.body.requestData.urId,
-                            urStatus: {
-                                $ne: cStatus
+                    if(req.body.requestData.urId!=cst.urId){
+                        let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.status.editContractComplete
+                        logger.debug(req, cmd + '|cStatus:' + cStatus + '|urStatusFound:' + util.isDataFound(req.body.requestData.urStatus))
+                        cmd = 'pushUpdateUrStatusTask'
+                        edit.countPush = edit.countPush + 1
+                        asyncTasks.push((callback) => {
+                            let urWhere = {
+                                urId: req.body.requestData.urId,
+                                urStatus: {
+                                    $ne: cStatus
+                                }
                             }
-                        }
-                        logger.info(req, 'runUpdateUrStatusTask|urStatus:' + cStatus + '|where:' + util.jsonToText(urWhere))
-                        mUR.update({
-                            urStatus: cStatus
-                        }, {
-                            where: urWhere
-                        }).then((succeed) => {
-                            // urWhere.editStatus='Updated '+succeed+' rows'
-                            if (succeed > 0) {
-                                edit.countSuccess = edit.countSuccess + 1
-                                edit.editResults.push({
-                                    urId: req.body.requestData.urId,
-                                    editStatus: 'Updated ' + succeed + ' rows'
-                                })
-                            } else {
+                            logger.info(req, 'runUpdateUrStatusTask|urStatus:' + cStatus + '|where:' + util.jsonToText(urWhere))
+                            mUR.update({
+                                urStatus: cStatus
+                            }, {
+                                where: urWhere
+                            }).then((succeed) => {
+                                // urWhere.editStatus='Updated '+succeed+' rows'
+                                if (succeed > 0) {
+                                    edit.countSuccess = edit.countSuccess + 1
+                                    edit.editResults.push({
+                                        urId: req.body.requestData.urId,
+                                        editStatus: 'Updated ' + succeed + ' rows'
+                                    })
+                                } else {
+                                    // edit.countError = edit.countError + 1 //wanna return success to user cause user can't do anything about this
+                                    edit.editResults.push({
+                                        urId: req.body.requestData.urId,
+                                        editStatus: 'No row Update'
+                                    })
+                                }
+                                callback()
+                            }).catch((err) => {
+                                // urWhere.editStatus='Update Error:'+err
                                 // edit.countError = edit.countError + 1 //wanna return success to user cause user can't do anything about this
                                 edit.editResults.push({
                                     urId: req.body.requestData.urId,
-                                    editStatus: 'No row Update'
+                                    editStatus: 'Update Error:' + err
                                 })
-                            }
-                            callback()
-                        }).catch((err) => {
-                            // urWhere.editStatus='Update Error:'+err
-                            // edit.countError = edit.countError + 1 //wanna return success to user cause user can't do anything about this
-                            edit.editResults.push({
-                                urId: req.body.requestData.urId,
-                                editStatus: 'Update Error:' + err
+                                callback()
                             })
-                            callback()
                         })
-                    })
-                    cmd = 'pushInsertWorkflowTask'
-                    edit.countPush = edit.countPush + 1
-                    asyncTasks.push((callback) => {
-                        let upBy = req.header('x-userTokenId') ? util.getUserName(req.header('x-userTokenId')) : 'system'
-                        let workFlowData = {
-                            urId: req.body.requestData.urId,
-                            urStatus: cStatus,
-                            updateBy: upBy
-                        }
-                        let wfWhere = {
-                            urId: req.body.requestData.urId,
-                            urStatus: cStatus
-                        }
-                        logger.info(req, 'runhInsertWorkflowTask|workFlow:' + util.jsonToText(workFlowData) + '|where:' + util.jsonToText(wfWhere))
-                        mUrWf.findOrCreate({
-                            where: wfWhere,
-                            defaults: workFlowData
-                        }).spread((db, succeed) => {
-                            let dbClone = {}
-                            if (util.isDataFound(db)) dbClone.wfId = db.wfId
-                            if (succeed) dbClone.editStatus = 'Inserted'
-                            else dbClone.editStatus = 'Duplicate'
-                            edit.countSuccess = edit.countSuccess + 1
-                            edit.editResults.push(dbClone)
-                            callback()
-                        }).catch((err) => {
-                            // edit.countError = edit.countError + 1 //wanna return success to user cause user can't do anything about this
-                            workFlowData.editStatus = 'Insert Error:' + err
-                            edit.editResults.push(workFlowData)
-                            callback()
+                        cmd = 'pushInsertWorkflowTask'
+                        edit.countPush = edit.countPush + 1
+                        asyncTasks.push((callback) => {
+                            let upBy = req.header('x-userTokenId') ? util.getUserName(req.header('x-userTokenId')) : 'system'
+                            let workFlowData = {
+                                urId: req.body.requestData.urId,
+                                urStatus: cStatus,
+                                updateBy: upBy
+                            }
+                            let wfWhere = {
+                                urId: req.body.requestData.urId,
+                                urStatus: cStatus
+                            }
+                            logger.info(req, 'runhInsertWorkflowTask|workFlow:' + util.jsonToText(workFlowData) + '|where:' + util.jsonToText(wfWhere))
+                            mUrWf.findOrCreate({
+                                where: wfWhere,
+                                defaults: workFlowData
+                            }).spread((db, succeed) => {
+                                let dbClone = {}
+                                if (util.isDataFound(db)) dbClone.wfId = db.wfId
+                                if (succeed) dbClone.editStatus = 'Inserted'
+                                else dbClone.editStatus = 'Duplicate'
+                                edit.countSuccess = edit.countSuccess + 1
+                                edit.editResults.push(dbClone)
+                                callback()
+                            }).catch((err) => {
+                                // edit.countError = edit.countError + 1 //wanna return success to user cause user can't do anything about this
+                                workFlowData.editStatus = 'Insert Error:' + err
+                                edit.editResults.push(workFlowData)
+                                callback()
+                            })
                         })
-                    })
+                    }
+
                     cmd = 'runAsyncTasks'
                     async.parallel(asyncTasks, () => { // All tasks are done now
                         // doSomethingOnceAllAreDone()

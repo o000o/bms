@@ -59,24 +59,16 @@ GROUP BY ur.UR_STATUS
       rawQs.push("SELECT '" + cst.notification.myUr + "' as \"groupName\", ur_status as status, COUNT(*) as total "
       + "FROM user_request WHERE ur_by='" + decoded.userName + "' GROUP BY ur_status;")
 
-      if(cst.userGroup.admin.indexOf(decoded.userType)>=0){ //admin
-        rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
-        + "FROM user_request ur "
-        + "WHERE ur.UR_STATUS='" + cst.status.vpApproved + "' GROUP BY ur.UR_STATUS;")
+      if(cst.userGroup.admin.indexOf(decoded.userType)>=0){
         rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
-        + "WHERE (ur.UR_ID = urw.UR_ID AND ur.ur_status = urw.ur_status) AND (urw.UPDATE_BY='" + decoded.userName
-        + "' AND (urw.UR_STATUS='" + cst.status.adminAccept + "' or urw.UR_STATUS='" + cst.status.complete + "')) GROUP BY ur.UR_STATUS;")
-      }else if(cst.userGroup.manager.indexOf(decoded.userType)>=0){ //DM
+        + "WHERE (ur.UR_ID = urw.UR_ID AND ur.ur_status = urw.ur_status) AND (ur.UR_STATUS='" + cst.status.dmApproved + "' OR (urw.UPDATE_BY='" + decoded.userName
+        + "' AND (urw.UR_STATUS='" + cst.status.adminAccept + "' or urw.UR_STATUS='" + cst.status.complete + "'))) GROUP BY ur.UR_STATUS;")
+      }else if(cst.userGroup.manager.indexOf(decoded.userType)>=0){
         rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
         + "WHERE ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY='" + decoded.userName 
         + "' AND urw.UR_STATUS='" + cst.status.wDmApproval + "' GROUP BY ur.UR_STATUS;")
-      }else if(cst.userGroup.vp.indexOf(decoded.userType)>=0){ //VP
-        rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
-        + "FROM user_request ur,ur_workflow urw "
-        + "WHERE ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY='" + decoded.userName 
-        + "' AND urw.UR_STATUS='" + cst.status.wVpApproval + "' GROUP BY ur.UR_STATUS;")
       }
 
       cmd = 'countUR'
