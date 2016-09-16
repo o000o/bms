@@ -35,28 +35,34 @@ const userRequest = {
                                     if (!om.department) om.department = req.body.requestData.department
                                         //Update Maneger data in table user don't care success or not just write log
                                         // cmd = 'updateUserManagement'
-                                    logger.info(req, 'prepareVpData|' + util.jsonToText(upUser))
+                                    logger.info(req, 'prepareManagerData|' + util.jsonToText(upUser))
                                         // mUser.upsert({userName:dmUser, userType:'MANAGER', email:dmEmail, createBy:'system'})
-                                    mUser.update(upUser, {where: {userName: upUser.userName}
-                                    }).then((succeed) => {
-                                        logger.info(req, 'updateUserManagement|Updated ' + succeed + ' records')
-                                        if (succeed == 0) { //Data not exist insert new
-                                            mUser.create(upUser).then((succeed) => {
-                                                logger.info(req, 'updateUserManagement|Inserted:' + util.jsonToText(succeed))
-                                            }).catch((err) => {
-                                                logger.info(req, 'updateUserManagement|InsertFailed|' + err)
-                                            })
-                                        }
-                                    }).catch((err) => {
-                                        logger.info(req, 'updateUserManagement|UpdateFailed|' + err)
-                                    })
+                                    mUser.update(upUser, {
+                                            where: {
+                                                userName: upUser.userName
+                                            }
+                                        }).then((succeed) => {
+                                            logger.info(req, 'updateUserManagement|Updated ' + succeed + ' records')
+                                            if (succeed == 0) { //Data not exist insert new
+                                                mUser.create(upUser).then((succeed) => {
+                                                    logger.info(req, 'updateUserManagement|Inserted:' + util.jsonToText(succeed))
+                                                }).catch((err) => {
+                                                    logger.info(req, 'updateUserManagement|InsertFailed|' + err)
+                                                })
+                                            }
+                                        }).catch((err) => {
+                                            logger.info(req, 'updateUserManagement|UpdateFailed|' + err)
+                                        })
                                         //Add Workflow for VP!!!
                                     cmd = 'prepareWorkflowData'
                                     let workflow = {
                                         urId: req.body.requestData.urId,
                                         urStatus: cst.status.wVpApproval,
                                         updateBy: om.managerUser,
-                                        department: om.department
+                                        department: om.department,
+                                        userEmail: om.managerEmail,
+                                        userName: om.managerName,
+                                        userSurname: om.managerSurname
                                     }
                                     logger.info(req, cmd + '|' + util.jsonToText(workflow))
                                     cmd = 'createVpWorkflow'
@@ -92,7 +98,6 @@ const userRequest = {
                             let jWhere = {
                                 urId: req.body.requestData.urId
                             }
-
                             let status = (w_vpApprove) ? cst.status.wVpApproval : req.body.requestData.urStatus
                             let upStatus = {
                                 urStatus: status
@@ -127,6 +132,7 @@ const userRequest = {
                                         // let to = null
                                     switch (req.body.requestData.urStatus) {
                                         case cst.status.dmApproved: //email VP
+                                            //ooo  call OM to get VP Email and Save into DB user
                                             if (to) wcallback(null, to, cc)
                                             else wcallback('Emails Not Found', null)
                                             break
@@ -447,7 +453,10 @@ const userRequest = {
                             req.body.requestData.urWorkflowList = {
                                 urStatus: req.body.requestData.urStatus,
                                 updateBy: om.managerUser,
-                                department: om.department
+                                department: om.department,
+                                userEmail: om.managerEmail,
+                                userName: om.managerName,
+                                userSurname: om.managerSurname
                             }
                             logger.info(req, cmd + '|' + util.jsonToText(req.body.requestData.urWorkflowList))
                             cmd = 'addUserEmail_Department'

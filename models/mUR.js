@@ -32,7 +32,8 @@ const mUR = mCfg.sequelize.define('user_request', {
 	userDepartment: {type: Sequelize.STRING, field: 'user_department', allowNull: true},
 	userEmail: {type: Sequelize.STRING, field: 'user_email', allowNull: true},
 	userName: {type: Sequelize.STRING, field: 'user_name', allowNull: true},
-	userSurname: {type: Sequelize.STRING, field: 'user_surname', allowNull: true}
+	userSurname: {type: Sequelize.STRING, field: 'user_surname', allowNull: true},
+	seatAmount: {type: Sequelize.INTEGER, field: 'seat_amount', allowNull: true}
 },{freezeTableName: true, timestamps: false})
 
 mUR.hasMany(mUrWf, {as:cst.models.urWorkflows,foreignKey:'urId', targetKey:'urId'})
