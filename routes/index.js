@@ -32,10 +32,13 @@ router.get('/notification', notification.ur)
 router.post('/userRequest', userRequest.add)
 router.put('/userRequest', userRequest.edit)
 router.get('/userRequest', userRequest.query)
+router.get('/userRequest/department', userRequest.distinctDepartment)
+router.get('/userRequest/rentalObjective', userRequest.distinctObjective)
 router.post('/getUserRequest', userRequest.queryByCriteria)
 router.get('/userRequest/:urId', userRequest.queryById)
 router.delete('/userRequest/:urId', userRequest.delete)
 router.put('/userRequest/updateStatus', userRequest.updateStatus)
+
 
 // ============================================================================
 // Location Master
