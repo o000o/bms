@@ -552,15 +552,62 @@ const contract = {
                                     callback()
                                 })
                             })
-                        } else {
+                        } else {    //No buildingId Insert Location and Area
+                            let cmdPush = 'pushLocation'
+                            let cloneArea = (util.isDataFound(req.body.requestData.buildingLocation.buildingAreaList))?JSON.parse(util.jsonToText(req.body.requestData.buildingLocation.buildingAreaList)):null
+                            if(util.isDataFound(cloneArea)) delete req.body.requestData.buildingLocation.buildingAreaList
+                            edit.countPush = edit.countPush + 1
+                            asyncTasks.push((callback)=>{
+                          mLocation.create(loData)
+                            // include:[{model: mArea, as:cst.models.locationAreas}]}) // db lock when send 2 duplicate areas in a row
+                          .then((dbl) => {
+                            logger.info(req,cmdPush+'LocationTask|Inserted|'+util.jsonToText(dbl))
+                            edit.countSuccess = edit.countSuccess + 1
+                                edit.editResults.push({
+                                    buildingId: dbl.buildingId,
+                                    editStatus: 'Inserted'
+                                })
+                            if(util.isDataFound(cloneArea)){
+                              cmdPush = 'addIdIntoAreaList'
+                              cloneArea.forEach((value) => {
+                                delete value.editAction
+                                value.buildingId=dbl.buildingId
+                                value.contractId=edit.contractId
+                              })
+                              logger.info(req,cmdPush+'|AreaList:'+util.jsonToText(cloneArea))
+                              cmdPush = 'bulkCreateAreaList'
+                              edit.countPush = edit.countPush + 1
+                              mArea.bulkCreate(cloneArea, {validate:true})
+                              .then((succeed) => {
+                                logger.info(req,cmdPush+'|'+util.jsonToText(succeed))
+                                edit.countSuccess = edit.countSuccess + 1
+                                //too lazy too query area again so just return contract
+                                edit.editResults.push({
+                                    editStatus: 'Area bulk Inserted'
+                                })
+                                callback()
+                              }).catch((err) => {
+                                edit.countError = edit.countError + 1
+                                edit.areaInsertError = edit.areaInsertError + 1
+                                logger.error(req,cmdPush+'|'+err)
+                                edit.editResults.push({
+                                    editStatus: 'Area bulk Insert Error:'+err
+                                })
+                                callback()
+                              })
+                            }else callback()
+                          }).catch((err) => {
                             edit.countError = edit.countError + 1
                             edit.locationUpdateError = edit.locationUpdateError + 1
-                            loData.editStatus = 'BadRequest:Can not update Location without buildingId'
+                            loData.editStatus='Insert Error:'+err
                             edit.editResults.push(loData)
                                 // uMsg.push('แก้ไขข้อมูลสถานที่ไม่สำเร็จ')
                             callback()
+                          })
+                        })
                         }
                     }
+
                     cmd = 'pushBuildingAreaListTasks'
                     if (util.isDataFound(req.body.requestData.buildingLocation.buildingAreaList)) {
                         req.body.requestData.buildingLocation.buildingAreaList.forEach((item) => { // Loop through some items
