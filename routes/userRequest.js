@@ -9,17 +9,16 @@ const mUR = require('../models/mUR')
 const mUrWf = require('../models/mUrWorkFlow')
 const mUser = require('../models/mUser')
 const cfg = require('../config/config')
-const async = require('async')
 const mCfg = require('../config/modelCfg')
-
+const async = require('async')
 const userRequest = {
-    
     updateStatus: (req, res) => {
         let cmd = 'updateStatusUr'
         try {
             // insert workflow => update urStatus => send email
             let to = null
-            let w_vpApprove = false
+            // let w_vpApprove = false
+            let lastStatus = req.body.requestData.urStatus
             cmd = 'startSeries'
             async.series([
                         (callback) => { // check OM for VP information if dmApproved
@@ -28,6 +27,59 @@ const userRequest = {
                                 ext.omGetVpUpByUser(req).then(om => {
                                     // callback(null, om)
                                     logger.info(req, cmd + '|OM result:' + util.jsonToText(om))
+            let isDmVp = false
+            cmd = 'checkIsDmVp'
+            cfg.om.approvalPosition.some(value => {
+              // console.log('ooooooooo'+value+':'+(om.managerPosition.indexOf(value)>=0) )
+              if(om.position.indexOf(value)>=0 && (value!='VP' ||
+               (value=='VP' && om.position.indexOf('AVP')<0&&om.position.indexOf('SVP')<0
+                &&om.position.indexOf('EVP')<0&&om.position.indexOf('SEVP')<0))) isDmVp=true
+
+              logger.debug(req,'checkPosition|'+value+':'+isDmVp)
+            })
+
+            if(isDmVp){
+                cmd = 'setLastStatus'
+                lastStatus = cst.status.vpApproved
+
+                mUser.update({userType:cst.userType.vp}, {where:{userName:om.user}}).then((succeed) => {
+                    logger.info(req, 'updateUserManagement|Updated ' + succeed + ' records')
+                    if (succeed == 0) logger.info(req, 'updateUserManagement|UpdateFailed|')
+                    else logger.info(req, 'updateUserManagement|Updated:')
+                }).catch((err) => {
+                    logger.info(req, 'updateUserManagement|UpdateFailed|' + err)
+                })
+
+                cmd = 'setWorkflowDatas'
+                let workflow={
+                    urId: req.body.requestData.urId,
+                    urStatus: lastStatus,
+                    updateBy: om.user,
+                    department: om.department,
+                    userEmail: om.email,
+                    userName: om.name,
+                    userSurname: om.surname                   
+                }
+                let workflows = [JSON.parse(util.jsonToText(workflow))]
+                workflow.urStatus=cst.status.wVpApproval
+                workflows.push(JSON.parse(util.jsonToText(workflow)))
+                // workflow.urStatus=cst.status.dmApproved
+                // workflows.push(workflow)
+                logger.debug(req,cmd+'|'+workflows)
+
+                cmd = 'bulkCreateWorkflowDatas'
+                mUrWf.bulkCreate(workflows, {validate:true})
+                  .then((wfDone) => {
+                    logger.info(req,cmd+'|'+wfDone)
+                    callback(null, workflows)
+                  }).catch((err) => {
+                    logger.error(req, cmd + '|' + err)
+                    logger.summary(req, cmd + '|' + error.desc_01001)
+                    callback(dberr, 'Error when create mUrWf')
+                  })
+
+
+            }else{
                                     let upUser = {}
                                     upUser.userName = om.managerUser
                                     upUser.email = om.managerEmail
@@ -71,14 +123,18 @@ const userRequest = {
                                     cmd = 'createVpWorkflow'
                                     mUrWf.create(workflow).then((succeed) => {
                                         logger.info(req, cmd + '|AddedWorkflow:' + util.jsonToText(succeed))
-                                        w_vpApprove = true
+                                        // w_vpApprove = true
+                                        lastStatus = cst.status.wVpApproval
                                         callback(null, succeed)
                                     }).catch((dberr) => {
                                         logger.error(req, cmd + '|' + dberr)
                                         logger.summary(req, cmd + '|' + error.desc_01001)
                                         callback(dberr, 'Error when create mUrWf')
-                                    })
-                                }).catch(oerr => {
+                                    })        
+
+            }
+
+                                }).catch(oerr => { //from omGetVpUpByUser
                                     // logger.error(req,cmd+'|'+util.jsonToText(oerr))
                                     // resp.getOmError(req,res,cmd,oerr)
                                     logger.error(req, cmd + '|' + util.jsonToText(oerr))
@@ -101,10 +157,9 @@ const userRequest = {
                             let jWhere = {
                                 urId: req.body.requestData.urId
                             }
-                            let status = (w_vpApprove) ? cst.status.wVpApproval : req.body.requestData.urStatus
-                            let upStatus = {
-                                urStatus: status
-                            }
+                            // let status = (w_vpApprove) ? cst.status.wVpApproval : req.body.requestData.urStatus
+                            let upStatus = {urStatus: lastStatus}
+
                             cmd = 'updateUR'
                             logger.debug(req, cmd + '|where:' + util.jsonToText(jWhere) + '|set:' + util.jsonToText(upStatus))
                             mUR.update(upStatus, {
@@ -126,14 +181,15 @@ const userRequest = {
                             //admin accept => don't email
                             //admin complete => email user & manager <= email in UR & user <= search manager from workflow
                             let wcmd = 'chkNotifyEmail'
-                            logger.debug(req, 'notifyEmail|' + cfg.email.notify)
+                            logger.info(req, 'notifyEmail|' + cfg.email.notify+'|lastStatus:'+lastStatus)
                             if (cfg.email.notify) { //Send Email?
                                 wcmd = 'startWaterfall'
                                 async.waterfall([(wcallback) => { //gen To
                                     wcmd = 'chkUrStatus' //to know who to send email to
                                     let cc = null
                                         // let to = null
-                                    switch (req.body.requestData.urStatus) {
+                                    switch (lastStatus) {
+                                        case cst.status.wVpApproval: //email VP
                                         case cst.status.dmApproved: //email VP
                                             //ooo  call OM to get VP Email and Save into DB user
                                             if (to) wcallback(null, to, cc)
@@ -431,15 +487,14 @@ const userRequest = {
                             upUser.email = om.managerEmail
                             upUser.name = om.managerName
                             upUser.surname = om.managerSurname
-
-/*******Move to after create UR & Workflow
                                 //Update Maneger data in table user don't care success or not just write log
                                 // cmd = 'updateUserManagement'
                             logger.info(req, 'prepareManagerData|' + util.jsonToText(upUser))
                                 // mUser.upsert({userName:dmUser, userType:'MANAGER', email:dmEmail, createBy:'system'})
                             mUser.update(upUser, {
                                     where: {
-                                        userName: upUser.userName
+                                        userName: upUser.userName,
+                                        userType: {$ne:'VP'}
                                     }
                                 }).then((succeed) => {
                                     logger.info(req, 'updateUserManagement|Updated ' + succeed + ' records')
@@ -453,9 +508,7 @@ const userRequest = {
                                 }).catch((err) => {
                                     logger.info(req, 'updateUserManagement|UpdateFailed|' + err)
                                 })
-****************/
-
-                            //Add UR & Workflow for real!!!
+                                //Add UR & Workflow for real!!!
                             cmd = 'prepareWorkflowData'
                             req.body.requestData.urWorkflowList = {
                                 urStatus: req.body.requestData.urStatus,
@@ -481,81 +534,13 @@ const userRequest = {
                                 logger.info(req, cmd + '|' + util.jsonToText(succeed))
                                 logger.info(req, 'notifyEmail|' + cfg.email.notify)
                                 if (cfg.email.notify) { //Send Email?
-                                    ext.sendEmail(om.managerEmail, succeed).then(mresult => {
+                                    ext.sendEmail(om.managerEmail,null, succeed).then(mresult => {
                                         logger.info(req, 'notifyEmail|' + util.jsonToText(mresult))
                                     }).catch(merr => {
                                         logger.error(req, 'notifyEmail|' + util.jsonToText(merr))
                                     })
                                 }
-
-                                let cWfDm=null
-                                let cWfVp=null
-                                cmd='checkManagerIsVP'
-                            //check if manager is VP or above must add vpApproved and wVpApprove workflow
-                            cfg.om.approvalPosition.some(value => {
-                              // console.log('ooooooooo'+value+':'+(om.managerPosition.indexOf(value)>=0) )
-                              if(om.managerPosition.indexOf(value)>=0 && (value!='VP' ||
-                               (value=='VP' && om.managerPosition.indexOf('AVP')<0&&om.managerPosition.indexOf('SVP')<0
-                                &&om.managerPosition.indexOf('EVP')<0&&om.managerPosition.indexOf('SEVP')<0))){
-                                //prepare workflow Data
-                                    cWfDm=JSON.parse(util.jsonToText(req.body.requestData.urWorkflowList))
-                                    cWfVp=JSON.parse(util.jsonToText(req.body.requestData.urWorkflowList))
-                                    cWfDm.urStatus=cst.status.dmApproved
-                                    cWfVp.urStatus=cst.status.wVpApproval
-                                    cWfDm.urId=succeed.urId
-                                    cWfVp.urId=succeed.urId
-
-                                //update user data
-                                    upUser.userType=cst.userType.vp
-                                }
-                              logger.debug(req,'checkPosition|Position:'+om.managerPosition+'|config:'+value)
-                            })
-
-                                //Update Maneger data in table user don't care success or not just write log
-                                // cmd = 'updateUserManagement'
-                            logger.info(req, 'prepareManagerData|' + util.jsonToText(upUser))
-                                // mUser.upsert({userName:dmUser, userType:'MANAGER', email:dmEmail, createBy:'system'})
-                            mUser.update(upUser, {
-                                    where: {
-                                        userName: upUser.userName
-                                    }
-                                }).then((succeed) => {
-                                    logger.info(req, 'updateUserManagement|Updated ' + succeed + ' records')
-                                    if (succeed == 0) { //Data not exist insert new
-                                        mUser.create(upUser).then((succeed) => {
-                                            logger.info(req, 'updateUserManagement|Inserted:' + util.jsonToText(succeed))
-                                        }).catch((err) => {
-                                            logger.info(req, 'updateUserManagement|InsertFailed|' + err)
-                                        })
-                                    }
-                                }).catch((err) => {
-                                    logger.info(req, 'updateUserManagement|UpdateFailed|' + err)
-                                })
-
-                                cmd='checkIfVP'
-                                if(cWfDm&&cWfVp){
-                                    //update urStatus to wVpApprove
-                                    cmd='updateUrStatus'
-                                    mUR.update({urStatus:cWfVp.urStatus}, {where:{urId:cWfVp.urId}}).then((done) => {
-                                    //add 2 workflow datas
-                                    cmd='insert2MoreWorkflow'
-                                    mUrWf.bulkCreate([cWfDm,cWfVp], {validate:true})
-                                      .then((wfDone) => {
-                                        logger.info(req,cmd+'|'+JSON.stringify(wfDone))
-                                        resp.getSuccess(req,res,cmd,succeed) })
-                                      .catch((err) => {
-                                        logger.error(req, cmd + '|' + err)
-                                        logger.summary(req, cmd + '|' + error.desc_01001)
-                                        res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
-                                      })
-                                    }).catch(err=>{
-                                        logger.error(req, cmd + '|' + err)
-                                        logger.summary(req, cmd + '|' + error.desc_01001)
-                                        res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
-                                    })
-                                    
-                                }else  resp.getSuccess(req, res, cmd, succeed)
-
+                                resp.getSuccess(req, res, cmd, succeed)
                             }).catch((err) => {
                                 logger.error(req, cmd + '|' + err)
                                 logger.summary(req, cmd + '|' + error.desc_01001)
@@ -805,7 +790,6 @@ const userRequest = {
             resp.getInternalError(req, res, cmd, err)
         }
     },
-
     distinctDepartment:(req, res) => {
         let cmd='distinctDepartment'
         let rawQ='select distinct department from user_request where department is not null'
@@ -826,7 +810,7 @@ const userRequest = {
     },
     distinctObjective:(req, res) => {
         let cmd='distinctObjective'
-        let rawQ='select distinct rental_obj from user_request where rental_obj is not null'
+        let rawQ='select distinct rental_obj as rentalObjective from user_request where rental_obj is not null'
         mCfg.sequelize.query(rawQ, {type:mCfg.sequelize.QueryTypes.SELECT})
           .then((dbs) => {
             logger.info(req,cmd+'|SQL:'+rawQ+'|DBs:'+ util.jsonToText(dbs))

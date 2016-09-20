@@ -82,15 +82,24 @@ const location = {
             jWhere.include.as = cst.models.locationAreas
             jWhere.include.required = required
                 //add include Detail into jWhere
-                // if (util.isDataFound(jWhere.include.attributes)) {
-                //     jWhere.include.include = {}
-                //     jWhere.include.include.model = mDetail
-                //     jWhere.include.include.as = cst.models.areaDetails
-                //     jWhere.include.include.required = false
-                //     jWhere.include.include.attributes = {
-                //         exclude: ['buildingAreaId']
-                //     }
-                // }
+            if (util.isDataFound(jWhere.include.attributes)) {
+                required = false
+                jWhere.include.include = {}
+                if (util.isDataFound(req.body.requestData.detailCriteria)) {
+                    jWhere.include.include = JSON.parse(JSON.stringify(req.body.requestData.detailCriteria))
+                    if (util.isDataFound(req.body.requestData.detailCriteria.where)) {
+                        required = true
+                    }
+                    if (!util.isDataFound(req.body.requestData.detailCriteria.attributes) && JSON.stringify(req.body.requestData.detailCriteria.attributes) != '[]') {
+                        jWhere.include.include.attributes = {
+                            exclude: ['buildingAreaId']
+                        }
+                    }
+                }
+                jWhere.include.include.model = mDetail
+                jWhere.include.include.as = cst.models.areaDetails
+                jWhere.include.include.required = required
+            }
             logger.info(req, cmd + '|Criteria:' + jsUtil.inspect(jWhere, {
                     showHidden: false,
                     depth: null
@@ -145,17 +154,7 @@ const location = {
             let required = false
             if (util.isDataFound(req.body.requestData.areaCriteria)) {
                 jWhere = JSON.parse(JSON.stringify(req.body.requestData.areaCriteria))
-                    /*if (!util.isDataFound(req.body.requestData.areaCriteria.attributes) && JSON.stringify(req.body.requestData.areaCriteria.attributes) != '[]') {
-                        jWhere.attributes = {
-                            exclude: ['buildingId']
-                        }
-                    }*/
             }
-            /*else {
-                           jWhere.attributes = {
-                               exclude: ['buildingId']
-                           }
-                       }*/
             //add paging in to jwhere
             jWhere.offset = jLimit.offset
             jWhere.limit = jLimit.limit
@@ -174,21 +173,33 @@ const location = {
             jWhere.include.push(where)
                 //add include area detail
             where = {}
+            required = false
+            if (util.isDataFound(req.body.requestData.detailCriteria)) {
+                where = JSON.parse(JSON.stringify(req.body.requestData.detailCriteria))
+                if (util.isDataFound(req.body.requestData.detailCriteria.where)) {
+                    required = true
+                }
+            }
             where.model = mDetail
             where.as = cst.models.areaDetails
-            where.required = false
-            where.attributes = {
-                exclude: ['buildingAreaId']
-            }
+            where.required = required
+                //where.attributes = attributes
             jWhere.include.push(where)
                 //add include Movement
             where = {}
+            required = false
+            if (util.isDataFound(req.body.requestData.movementCriteria)) {
+                where = JSON.parse(JSON.stringify(req.body.requestData.movementCriteria))
+                if (util.isDataFound(req.body.requestData.movementCriteria.where)) {
+                    required = true
+                }
+            }
             where.model = mMovement
             where.as = cst.models.movements
-            where.required = false
-            where.attributes = {
-                exclude: ['buildingAreaId']
-            }
+            where.required = required
+                // where.attributes = {
+                //     exclude: ['buildingAreaId']
+                // }
             jWhere.include.push(where)
                 //add include UR
             where = {}
@@ -207,9 +218,9 @@ const location = {
             where.model = mUR
             where.as = cst.models.urs
             where.required = required
-            where.attributes = {
-                exclude: ['buildingAreaId']
-            }
+                // where.attributes = {
+                //     exclude: ['buildingAreaId']
+                // }
             jWhere.include.push(where)
             logger.info(req, cmd + '|Criteria:' + jsUtil.inspect(jWhere, {
                     showHidden: false,

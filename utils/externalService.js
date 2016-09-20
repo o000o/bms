@@ -211,6 +211,7 @@ exports.omGetEmployeeAndMgrByUser=(req) => {
               om.email=table[0].EMAIL[0]
               om.name=table[0].THNAME[0]
               om.surname=table[0].THSURNAME[0]
+              om.position=table[0].POSITION[0]
               om.department=table[0].BUNAME[0]
               om.managerUser=table[0].APPROVAL_USERNAME[0]
               om.managerEmail=table[0].APPROVAL_EMAIL[0]
@@ -266,6 +267,7 @@ exports.omGetVpUpByUser=(req) => {
                   om.email=table[0].EMAIL[0]
                   om.name=table[0].THNAME[0]
                   om.surname=table[0].THSURNAME[0]
+                  om.position=table[0].POSITION[0]
                   om.department=table[0].BUNAME[0]
                   om.managerUser=table[0].APPROVAL_USERNAME[0]
                   om.managerEmail=table[0].APPROVAL_EMAIL[0]
@@ -482,6 +484,7 @@ exports.sendEmail=(to,cc,ur) => {
           resolve(jErr)
         })
       }else{
+        jErr.msg='Incomplete Email Data'
         logger.debug(null,'notifyEmail|'+jErr.msg)
         reject(jErr)
       }

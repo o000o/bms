@@ -50,6 +50,7 @@ GROUP BY ur.UR_STATUS
   ur: (req, res) => { //raw query
     let cmd = 'notification'
     try{
+      let isVp=false
       logger.info(req,cmd+'|token:'+req.header('x-userTokenId'))
       cmd = 'extractToken'
       const decoded = util.extractToken(req.header('x-userTokenId'))
@@ -75,8 +76,12 @@ GROUP BY ur.UR_STATUS
       }else if(cst.userGroup.vp.indexOf(decoded.userType)>=0){ //VP
         rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
-        + "WHERE ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY='" + decoded.userName 
-        + "' AND urw.UR_STATUS='" + cst.status.wVpApproval + "' GROUP BY ur.UR_STATUS;")
+        + "WHERE (ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY='" + decoded.userName 
+        + "' AND urw.UR_STATUS='" + cst.status.wVpApproval 
+        + "') OR (ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY='" + decoded.userName 
+        + "' AND (ur.UR_STATUS='" + cst.status.wVpApproval + "' OR ur.UR_STATUS='" + cst.status.wDmApproval
+        + "')) GROUP BY ur.UR_STATUS;")
+        isVp=true
       }
 
       cmd = 'countUR'
@@ -88,7 +93,24 @@ GROUP BY ur.UR_STATUS
           mCfg.sequelize.query(rawQ, {type:mCfg.sequelize.QueryTypes.SELECT})
           .then((dbs) => {
             logger.info(req,cmd+'|SQL:'+rawQ+'|DBs:'+ util.jsonToText(dbs))
-            if(util.isDataFound(dbs)) dbs.forEach((value) => {resData.push(value)})
+            if(util.isDataFound(dbs)){
+              let vpTmp = 0
+              let valueTmp = {
+                "groupName": "User Request",
+                "status": cst.status.wVpApproval,
+                "total": 0
+              }
+              dbs.forEach((value) => {
+                if(isVp){
+                  if(value.status==cst.status.wVpApproval || value.status==cst.status.wDmApproval) valueTmp.total+=value.total
+                  else resData.push(value)
+                }else resData.push(value)
+              })
+        
+              if(valueTmp.total){
+                resData.push(valueTmp)
+              }              
+            }
             callback()
           }).catch((err) => {
             logger.error(req,cmd+'|Error while count UR|'+err)

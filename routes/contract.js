@@ -890,8 +890,9 @@ const contract = {
     editVendorAgent: (req, res) => {
         let cmd = 'EditVendorAgent'
         try {
-            let cStatus = cst.editContractComplete
-            let wStatus = cst.editContractWait
+            let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.status.editContractComplete
+            // let cStatus = cst.editContractComplete
+            let wStatus = cst.status.editContractWait
             let upBy = 'system'
             let workFlowData = {
                 urId: req.body.requestData.urId,
@@ -952,7 +953,8 @@ const contract = {
             asyncTasks.push((callback) => {
                 let jWhere3 = {
                     urId: req.body.requestData.urId,
-                    urStatus: wStatus
+                    // urStatus: wStatus
+                    urStatus: {$ne: cStatus}
                 }
                 mUR.update({
                     urStatus: cStatus
@@ -998,7 +1000,8 @@ const contract = {
         let cmd = 'editPayment'
         let edit = {}
         try {
-            if (util.isDataFound(req.body.requestData) && util.isDataFound(req.body.requestData.contractPaymentList) && util.isDataFound(req.body.requestData.contractId) && util.isDataFound(req.body.requestData.urId)) {
+            // if (util.isDataFound(req.body.requestData) && util.isDataFound(req.body.requestData.contractPaymentList) && util.isDataFound(req.body.requestData.contractId) && util.isDataFound(req.body.requestData.urId)) {
+            if (util.isDataFound(req.body.requestData) && util.isDataFound(req.body.requestData.contractId) && util.isDataFound(req.body.requestData.urId)) {
                 let asyncTasks = [] // Array to hold async tasks
                 edit.contractId = req.body.requestData.contractId
                 edit.countPush = 0
@@ -1100,7 +1103,7 @@ const contract = {
                 cmd = 'checkPaymentListTasks'
                 if (util.isDataFound(asyncTasks)) {
                     logger.info(req, cmd + '|Have Tasks')
-                    let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.editContractComplete
+                    let cStatus = util.isDataFound(req.body.requestData.urStatus) ? req.body.requestData.urStatus : cst.status.editContractComplete
                     cmd = 'pushUpdateUrStatusTask'
                     edit.countPush = edit.countPush + 1
                     asyncTasks.push((callback) => {
@@ -1190,7 +1193,10 @@ const contract = {
                 } else {
                     let err = 'Tasks not found'
                     logger.summary(req, cmd + '|' + error.desc_01001 + '|' + err)
-                    res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
+                    if (util.isDataFound(edit)){
+                        logger.info(req, cmd + '|' + util.jsonToText(edit))
+                        res.json(resp.getJsonError(error.code_01001, error.desc_01001, edit))
+                    }else res.json(resp.getJsonError(error.code_01001, error.desc_01001, err))
                 }
             } else {
                 let err = 'Incomplete requestData'

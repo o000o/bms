@@ -5,6 +5,7 @@ const mCfg = require('../config/modelCfg')
 const mBuildingDetail = mCfg.sequelize.define('building_detail', {
 	buildingDetailId: {type: Sequelize.INTEGER, field: 'bd_id', primaryKey: true, autoIncrement: true, allowNull: false},
 	buildingAreaId: {type: Sequelize.INTEGER, field: 'ba_id', allowNull: false},
+	detailGroup: {type: Sequelize.STRING, field: 'detail_group', allowNull: false},
 	detailType: {type: Sequelize.STRING, field: 'detail_type', allowNull: false},
 	valueType: {type: Sequelize.STRING, field: 'value_type', allowNull: false},
 	value: {type: Sequelize.STRING, allowNull: false},

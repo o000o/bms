@@ -80,6 +80,7 @@ config.email.notify = true
 config.email.subject = {}
 config.email.subject[cst.status.wDmApproval] = 'BMS :: User-Request ที่รอการอนุมัติ' //user create request email manager
 config.email.subject[cst.status.dmApproved] = 'BMS :: User-Request ที่รอการอนุมัติ' //dm approved email VP
+config.email.subject[cst.status.wVpApproval] = 'BMS :: User-Request ที่รอการอนุมัติ' //dm approved email VP
 config.email.subject[cst.status.dmRejected] = 'BMS :: User-Request ที่ไม่ผ่านการอนุมัติ' //manager reject request email user
 config.email.subject[cst.status.vpRejected] = 'BMS :: User-Request ที่ไม่ผ่านการอนุมัติ' //VP reject request email user & manager
 config.email.subject[cst.status.vpApproved] = 'BMS :: User-Request ที่ผ่านการอนุมัติ รอดำเนินการต่อ' //VP approved email admin

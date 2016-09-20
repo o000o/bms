@@ -190,7 +190,9 @@ function genLoginRespObj(data){
     // mobileType: 'Postpaid', //Not use can hard code
     // userTokenId: genToken(data._id, data.userName, data.password),
     userTokenId: util.getToken(data),
-    userType: data.userType
+    userType: data.userType,
+    name: data.name,
+    surname: data.surname
     // contactQuota: data.contactQuota, //not in user DB, don't know what it is.
     // userMobileNo: data.mobileNo,
     // operatorType: 'ais',
