@@ -77,10 +77,9 @@ GROUP BY ur.UR_STATUS
         rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
         + "WHERE (ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY='" + decoded.userName 
-        + "' AND urw.UR_STATUS='" + cst.status.wVpApproval 
-        + "') OR (ur.UR_ID = urw.UR_ID AND urw.UPDATE_BY='" + decoded.userName 
-        + "' AND (ur.UR_STATUS='" + cst.status.wVpApproval + "' OR ur.UR_STATUS='" + cst.status.wDmApproval
-        + "')) GROUP BY ur.UR_STATUS;")
+        + "' AND (urw.UR_STATUS='" + cst.status.vpApproved 
+        + "' OR (ur.UR_STATUS='" + cst.status.wVpApproval + "' OR ur.UR_STATUS='" + cst.status.wDmApproval
+        + "'))) GROUP BY ur.UR_STATUS;")
         isVp=true
       }
 

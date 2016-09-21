@@ -21,7 +21,7 @@ const mBuildingArea = mCfg.sequelize.define('building_area', {
 	rentalObjective: {type: Sequelize.STRING, field: 'rental_obj', allowNull: true},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
   createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW},
-	builgingAreaRemain: {type: Sequelize.DECIMAL, field: 'available_space', allowNull: true}
+	buildingAreaRemain: {type: Sequelize.DECIMAL, field: 'available_space', allowNull: true}
 },{freezeTableName: true, timestamps: false})
 
 mBuildingArea.belongsToMany(mUR, {as:cst.models.urs,

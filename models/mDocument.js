@@ -20,7 +20,8 @@ const mDocument = mCfg.sequelize.define('document', {
 	documentRename: {type: Sequelize.STRING, field: 'doc_rename', allowNull: false},
 	documentPath: {type: Sequelize.STRING, field: 'doc_path', allowNull: false},
 	uploadStatus: {type: Sequelize.STRING, field: 'upload_status', allowNull: false},
-	pathType: {type: Sequelize.STRING, field: 'path_type', allowNull: false} //NAS or achriving
+	pathType: {type: Sequelize.STRING, field: 'path_type', allowNull: false}, //NAS or achriving
+	archivingUrl: {type: Sequelize.STRING, field: 'archiving_url', allowNull: true} 
 },{freezeTableName: true, timestamps: false})
 
 module.exports = mDocument

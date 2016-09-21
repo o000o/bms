@@ -114,6 +114,7 @@ config.archiving.username = 'devuser4'
 config.archiving.password = 'DevUser4!@#'
 config.archiving.expireToken = '900' //second
 config.archiving.clientIP = ip.address()
+config.archiving.regFile = /filename=\"(.*)\"/gi
 //config.archiving.clientIP = '127.0.0.1'
 
 //SAML
