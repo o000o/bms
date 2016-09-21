@@ -20,7 +20,7 @@ const mUR = mCfg.sequelize.define('user_request', {
 	urBy: {type: Sequelize.STRING, field: 'ur_by', allowNull: false},
 	urStatus: {type: Sequelize.STRING, field: 'ur_status', allowNull: false},
 	rentalObjective: {type: Sequelize.STRING, field: 'rental_obj', allowNull: true},
-	areaSize: {type: Sequelize.REAL, field: 'area_size', allowNull: true},
+	areaSize: {type: Sequelize.DECIMAL, field: 'area_size', allowNull: true},
 	unitArea: {type: Sequelize.STRING, field: 'unit_area', allowNull: true},
 	empTotal: {type: Sequelize.INTEGER, field: 'emp_total', allowNull: true},
 	outsourceEmpTotal: {type: Sequelize.INTEGER, field: 'outsource_emp_total', allowNull: true},

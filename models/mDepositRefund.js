@@ -11,7 +11,7 @@ const mDpRefund = mCfg.sequelize.define('deposit_refund', {
 	receiveDate: {type: Sequelize.DATEONLY, field: 'receive_date', allowNull: false//,
 		//get: function() {return mCfg.correctTime(this.getDataValue('receiveDate'))}
 	},
-	receiveAmount: {type: Sequelize.REAL, field: 'receive_amount', allowNull: false},
+	receiveAmount: {type: Sequelize.DECIMAL, field: 'receive_amount', allowNull: false},
 	receiveByUser: {type: Sequelize.STRING, field: 'receive_by_user', allowNull: false},
 	depositRemark: {type: Sequelize.STRING, field: 'deposit_remark', allowNull: true},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},

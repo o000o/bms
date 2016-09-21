@@ -24,7 +24,7 @@ const mInsurance = mCfg.sequelize.define('insurance', {
 	insured: {type: Sequelize.STRING, allowNull: false},
 	insuranceType: {type: Sequelize.STRING, field: 'insurance_type', allowNull: false},
 	sumInsured: {type: Sequelize.INTEGER, field: 'sum_insured', allowNull: false},
-	premium: {type: Sequelize.REAL, field: 'premium', allowNull: false},
+	premium: {type: Sequelize.DECIMAL, field: 'premium', allowNull: false},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
         createDate: { type: Sequelize.DATEONLY, field: 'create_date', allowNull: false, defaultValue: Sequelize.NOW}
 },{freezeTableName: true, timestamps: false})

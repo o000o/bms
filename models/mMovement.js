@@ -11,7 +11,7 @@ const mMovement = mCfg.sequelize.define('location_movement', {
 	movementDate: {type: Sequelize.DATEONLY, field: 'movement_date', allowNull: false},
   createDate: {type: Sequelize.DATEONLY, field: 'create_date', allowNull:false, defaultValue:Sequelize.NOW},
 	createBy: { type: Sequelize.STRING, field: 'create_by', allowNull: false},
-	assignSpace: {type: Sequelize.REAL, field: 'assign_space', allowNull: true},
+	assignSpace: {type: Sequelize.DECIMAL, field: 'assign_space', allowNull: true},
 	unitArea: {type: Sequelize.STRING, field: 'unit_area', allowNull: true}
 },{freezeTableName: true, timestamps: false});
 
