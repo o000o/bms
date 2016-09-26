@@ -74,6 +74,11 @@ config.om.options = {wsdl_options:{
 }}
 config.om.approvalPosition = ['VP','SVP','EVP','SEVP','C Level'] //Which Position is required to approve UR after DM approved
 
+// Notification
+config.notification = {}
+config.notification.contractExpire = 30
+
+
 // Email Notification to DM
 config.email = {}
 config.email.notify = true

@@ -49,6 +49,8 @@ constant.rentalObj.Store = 'Store'
 constant.notification = {}
 constant.notification.myUr = 'My Request'
 constant.notification.Ur = 'User Request'
+constant.notification.contractExpireHeader = 'Notification'
+constant.notification.contractExpire = 'Contract nearly expire'
 
 //userType
 constant.userType = {}

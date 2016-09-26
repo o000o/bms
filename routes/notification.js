@@ -68,6 +68,11 @@ GROUP BY ur.UR_STATUS
         + "FROM user_request ur,ur_workflow urw "
         + "WHERE (ur.UR_ID = urw.UR_ID AND ur.ur_status = urw.ur_status) AND (urw.UPDATE_BY='" + decoded.userName
         + "' AND (urw.UR_STATUS='" + cst.status.adminAccept + "' or urw.UR_STATUS='" + cst.status.complete + "')) GROUP BY ur.UR_STATUS;")
+        rawQs.push("SELECT DISTINCT '" + cst.notification.contractExpireHeader + "' as \"groupName\",'"
+        + cst.notification.contractExpire + "' as status, COUNT(*) as total "
+        + "FROM contract ct "
+        + "WHERE ct.contract_status='ACTIVE' AND DATEDIFF(day,GETDATE(),ct.end_date)>=0 AND DATEDIFF(day,GETDATE(),ct.end_date)<="
+        + cfg.notification.contractExpire + ";")
       }else if(cst.userGroup.manager.indexOf(decoded.userType)>=0){ //DM
         rawQs.push("SELECT '" + cst.notification.Ur + "' as \"groupName\",ur.ur_status as status, COUNT(*) as total "
         + "FROM user_request ur,ur_workflow urw "
@@ -89,6 +94,7 @@ GROUP BY ur.UR_STATUS
         // 2nd param is the function that each item is passed to
         (rawQ, callback) => {
           // Call an asynchronous function, often a save() to DB
+          logger.debug(req,cmd+'|SQL:'+rawQ)
           mCfg.sequelize.query(rawQ, {type:mCfg.sequelize.QueryTypes.SELECT})
           .then((dbs) => {
             logger.info(req,cmd+'|SQL:'+rawQ+'|DBs:'+ util.jsonToText(dbs))
