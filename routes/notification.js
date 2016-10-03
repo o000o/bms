@@ -107,7 +107,7 @@ GROUP BY ur.UR_STATUS
               }
               dbs.forEach((value) => {
                 if(isVp){
-                  if(value.status==cst.status.wVpApproval || value.status==cst.status.wDmApproval) valueTmp.total+=value.total
+                  if(value.groupName=='User Request'&&(value.status==cst.status.wVpApproval || value.status==cst.status.wDmApproval)) valueTmp.total+=value.total
                   else resData.push(value)
                 }else resData.push(value)
               })

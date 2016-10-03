@@ -65,6 +65,7 @@ config.adminDepartment = 'Admin Team'
 config.om = {}
 config.om.timeout = 10000 //10 Sec
 config.om.wsdlPath = __dirname+'/om.wsdl'
+config.om.endpoint = 'https://test-omws.ais.co.th/omws/WS_OM_OMService.svc'
 config.om.OmCode = 'OMTESTBMS'
 config.om.options = {wsdl_options:{
     ntlm: true,
@@ -118,9 +119,9 @@ config.archiving.objectURL = 'https://10.252.161.38:8082/SOSD/SOSD/'
 config.archiving.username = 'devuser4'
 config.archiving.password = 'DevUser4!@#'
 config.archiving.expireToken = '900' //second
-config.archiving.clientIP = ip.address()
+//config.archiving.clientIP = ip.address()
 config.archiving.regFile = /filename=\"(.*)\"/gi
-//config.archiving.clientIP = '127.0.0.1'
+config.archiving.clientIP = '127.0.0.1'
 
 //SAML
 config.sso = {}
@@ -147,3 +148,23 @@ config.sso.passport = {
     }
 }
 config.samlRedirect = 'http://localhost:3000'
+
+//Call Soap Webservice
+config.soap = {}
+config.soap.soapObj = {
+        ldapws: {
+          wsdl: __dirname+'/ldap.wsdl',
+          wsdlOptions: {},
+          endpoint: 'http://dev-ldapservicews.ais.co.th/Authenticate/AuthenticateService.asmx',
+          authenType: 0, // [0,null=No authen, 1=Basic]
+          username: {},
+          password: '{}',
+          timeout: 10000 // 10 Sec
+        }
+    }
+
+
+//LDAP WS Authenticate
+config.ldapws = {}
+config.ldapws.projectCode = 'TBLDMGNAUTH'
+config.ldapws.projectLevel = 0

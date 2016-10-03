@@ -1,6 +1,7 @@
 'use strict'
 const logger = require('../utils/logUtils')
 const async = require('async')
+const path = require('path')
 const request = require('request')
 const resp = require('../utils/respUtils')
 const util = require('../utils/bmsUtils')
@@ -13,6 +14,7 @@ const mBuildingLocation = require('../models/mBuildingLocation')
 const mBuildingArea = require('../models/mBuildingArea')
 const mInsurance = require('../models/mInsurance')
 const mContract = require('../models/mContract')
+const mCfg = require('../config/modelCfg')
 const document = {
     archivDownload: (req, res) => {
         let cmd = 'DownloadDocument'
@@ -21,92 +23,141 @@ const document = {
                 logger.error(req, cmd + '|Error:' + error.desc_00005)
                 return resp.getIncompleteParameter(req, res, cmd)
             }
-            let split = req.query.documentPath.split("/")
+            let split = req.query.documentPath.split("\\")
             if (split.length <= 0) {
                 logger.error(req, cmd + '|Error:' + error.desc_00005)
                 return resp.getIncompleteParameter(req, res, cmd)
             }
-            let filename = split[split.length - 1]
-            let options = {
-                method: 'POST',
-                url: cfg.archiving.authenURL,
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                    authorization: 'Basic ' + new Buffer(cfg.archiving.username + ":" + cfg.archiving.password).toString("base64")
-                },
-                form: {
-                    object_url: encodeURI(cfg.archiving.objectURL + filename),
-                    expire: cfg.archiving.expireToken,
-                    client_ip: cfg.archiving.clientIP
-                }
+            let resMsg = {
+                statusCode: null,
+                errDesc: null,
+                devMsg: null
             }
-            cmd = 'ArchivingAuthen'
-            logger.info(req, cmd + '|Request: ' + JSON.stringify(options))
-            console.log('|Request: ' + JSON.stringify(options))
-            request(options, (error, response, result) => {
-                if (error) {
-                    logger.error(req, cmd + '|Error: ' + error)
-                    logger.summary(req, cmd + '|' + error.desc_02001)
-                    res.json(resp.getJsonError(error.code_02001, error.desc_02001))
-                } else {
-                    let json = JSON.parse(result)
-                    if (json.status == 'success') {
-                        options = {}
-                        options = {
-                            method: 'GET',
-                            url: cfg.archiving.downloadURL,
-                            qs: {
-                                file: encodeURI(cfg.archiving.objectURL + filename),
-                                token: json.token
-                            },
-                            headers: {
-                                authorization: 'Basic ' + new Buffer(cfg.archiving.username + ":" + cfg.archiving.password).toString("base64")
+            async.waterfall([
+                (callback) => {
+                    let docData = {
+                        archivingUrl: null,
+                        originalName: null
+                    }
+                    cmd = 'GetArchivingURL'
+                    mDocument.findOne({
+                        where: {
+                            documentRename: split[split.length - 1]
+                        }
+                    }).then((db) => {
+                        logger.query(req, cmd + '|' + util.jsonToText(db))
+                        if (util.isDataFound(db)) {
+                            docData.archivingUrl = db.archivingUrl
+                            docData.originalName = db.documentName
+                            callback(null, docData)
+                        } else {
+                            logger.error(req, cmd + '|Not Found Document')
+                            logger.summary(req, cmd + '|Not Found Document')
+                            resMsg.statusCode = error.code_01003
+                            resMsg.errDesc = error.desc_01003
+                            resMsg.devMsg = db
+                            callback(resMsg)
+                        }
+                    }).catch((err) => {
+                        logger.error(req, cmd + '|' + err)
+                        logger.summary(req, cmd + '|' + error.desc_01002)
+                        resMsg.statusCode = error.code_01002
+                        resMsg.errDesc = error.desc_01002
+                        resMsg.devMsg = err
+                        callback(resMsg)
+                    })
+                }, (docObj, callback) => {
+                    let options = {
+                        method: 'POST',
+                        url: cfg.archiving.authenURL,
+                        headers: {
+                            'content-type': 'application/x-www-form-urlencoded',
+                            authorization: 'Basic ' + new Buffer(cfg.archiving.username + ":" + cfg.archiving.password).toString("base64")
+                        },
+                        form: {
+                            object_url: encodeURI(docObj.archivingUrl),
+                            expire: cfg.archiving.expireToken,
+                            client_ip: cfg.archiving.clientIP
+                        }
+                    }
+                    cmd = 'ArchivingAuthen'
+                    logger.info(req, cmd + '|Request: ' + JSON.stringify(options))
+                    request(options, (error, response, result) => {
+                        if (error) {
+                            logger.error(req, cmd + '|Error: ' + error)
+                            logger.summary(req, cmd + '|' + error.desc_02001)
+                            resMsg.statusCode = error.code_02001
+                            resMsg.errDesc = error.desc_02001
+                            resMsg.devMsg = error
+                            callback(resMsg)
+                        } else {
+                            let json = JSON.parse(result)
+                            if (json.status == 'success') {
+                                callback(null, json.token, docObj)
+                            } else {
+                                logger.error(req, cmd + '|Error: ' + result.status)
+                                logger.summary(req, cmd + '|' + error.desc_02002)
+                                resMsg.statusCode = error.code_02002
+                                resMsg.errDesc = error.desc_02002
+                                resMsg.devMsg = result.status
+                                callback(resMsg)
                             }
                         }
-                        let data = []
-                        let header = {}
-                        cmd = 'Download'
-                        logger.info(req, cmd + '|Request: ' + JSON.stringify(options))
-                        request(options).on('response', function(response) {
-                            header.statusCode = response.statusCode
-                            header.contentType = response.headers['content-type']
-                                //extract to original file
-                            let regexp = /filename=\"(.*)\"/gi
-                            let oriFilename = ""
-                            let archiName = regexp.exec(response.headers['content-disposition'])[1]
-                            if (archiName) {
-                                let name1 = archiName.substring(0, archiName.lastIndexOf("_"))
-                                let name2 = archiName.substring(archiName.lastIndexOf("."))
-                                if (name1 && name2) oriFilename = name1 + name2
-                            }
-                            if (oriFilename) {
-                                header.contentDisposition = "attachment; filename=\"" + oriFilename + "\""
-                            } else {
-                                header.contentDisposition = response.headers['content-disposition']
-                            }
-                        }).on('error', function(err) {
-                            logger.error(req, cmd + '|Error: ' + error)
-                            logger.summary(req, cmd + '|' + error.desc_02003)
-                            res.json(resp.getJsonError(error.code_02003, error.desc_02003))
-                        }).on('data', function(content) {
-                            data.push(content);
-                        }).on('end', function() {
-                            logger.summary(req, cmd + '|Success')
-                            data = Buffer.concat(data);
-                            res.writeHead(header.statusCode, {
-                                'Content-Type': header.contentType,
-                                'Content-Disposition': header.contentDisposition,
-                                'Content-Length': data.length
-                            });
-                            res.end(data)
-                        })
-                    } else {
-                        logger.error(req, cmd + '|Error: ' + result.status)
-                        logger.summary(req, cmd + '|' + error.desc_02002)
-                        res.json(resp.getJsonError(error.code_02002, error.desc_02002))
+                    })
+                }, (token, docObj, callback) => {
+                    let options = {
+                        method: 'GET',
+                        url: cfg.archiving.downloadURL,
+                        qs: {
+                            file: encodeURI(docObj.archivingUrl),
+                            token: token
+                        },
+                        headers: {
+                            authorization: 'Basic ' + new Buffer(cfg.archiving.username + ":" + cfg.archiving.password).toString("base64")
+                        }
                     }
+                    let data = []
+                    let header = {}
+                    let bodyContent = {
+                        data: [],
+                        header: {}
+                    }
+                    cmd = 'Download'
+                    logger.info(req, cmd + '|Request: ' + JSON.stringify(options))
+                    request(options).on('response', function(response) {
+                        logger.info(req, cmd + '|Response: ' + JSON.stringify(response))
+                        header.statusCode = response.statusCode
+                        header.contentType = response.headers['content-type']
+                        header.contentDisposition = "attachment; filename=\"" + encodeURI(docObj.originalName) + "\""
+                    }).on('error', function(err) {
+                        logger.error(req, cmd + '|Error: ' + error)
+                        logger.summary(req, cmd + '|' + error.desc_02003)
+                        resMsg.statusCode = error.code_02003
+                        resMsg.errDesc = error.desc_02003
+                        resMsg.devMsg = err
+                        callback(resMsg)
+                    }).on('data', function(content) {
+                        data.push(content);
+                    }).on('end', function() {
+                        logger.summary(req, cmd + '|Success')
+                        data = Buffer.concat(data)
+                        bodyContent.header = header
+                        bodyContent.data = data
+                        callback(null, bodyContent)
+                    })
                 }
-            })
+            ], (err, resContent) => {
+                if (err) {
+                    res.json(resp.getJsonError(err.statusCode, err.errDesc, err.devMsg))
+                } else {
+                    res.writeHead(resContent.header.statusCode, {
+                        'Content-Type': resContent.header.contentType,
+                        'Content-Disposition': resContent.header.contentDisposition,
+                        'Content-Length': resContent.data.length
+                    });
+                    res.end(resContent.data)
+                }
+            });
         } catch (err) {
             logger.error(req, cmd + '|Error:' + err)
             return resp.getInternalError(req, res, cmd, err)
@@ -340,37 +391,56 @@ const document = {
             //     logger.summary(req, cmd + '|' + error.desc_01001);
             //     res.json(resp.getJsonError(error.code_01001, error.desc_01001, err));
             // })
-            if (!util.isDataFound(req.body.requestData.uploadStatusList)) {
+            if (!util.isDataFound(req.body.requestData.uploadStatus) && !util.isDataFound(req.body.requestData.documentRename)) {
                 logger.error(req, cmd + '|Error:Incomplete parameter')
                 return resp.getIncompleteParameter(req, res, cmd)
             }
-            req.body.requestData.uploadStatusList.forEach((statusObj) => {
-                logger.info(req, cmd + '|Data:' + jsUtil.inspect(statusObj, {
-                    showHidden: false,
-                    depth: null
-                }))
-                mDocument.update({
-                    uploadStatus: statusObj.uploadStatus
-                }, {
-                    where: {
-                        documentRename: statusObj.documentRename
-                    }
-                }).then((succeed) => {
-                    let updated = 'Update success ' + succeed + ' rows'
-                    if (succeed > 0) {
-                        logger.info(req, cmd + '|' + updated)
-                    } else {
-                        logger.error(req, cmd + '|Error:Data not found')
-                    }
-                }).catch((dberr) => {
-                    logger.error(req, cmd + '|Error while update upload status|' + dberr)
-                })
+            logger.info(req, cmd + '|Data:' + jsUtil.inspect(req.body.requestData, {
+                showHidden: false,
+                depth: null
+            }))
+            mDocument.update({
+                uploadStatus: req.body.requestData.uploadStatus,
+                archivingUrl: req.body.requestData.archivingUrl
+            }, {
+                where: {
+                    documentRename: req.body.requestData.documentRename
+                }
+            }).then((succeed) => {
+                let updated = 'Update success ' + succeed + ' rows'
+                if (succeed > 0) {
+                    logger.info(req, cmd + '|' + updated)
+                    resp.getSuccess(req, res, cmd)
+                } else {
+                    logger.error(req, cmd + '|Error:Data not found')
+                    logger.summary(req, cmd + '|Data not found')
+                    res.json(resp.getJsonError(error.code_01003, error.desc_01003, 'Data not found'))
+                }
+            }).catch((dberr) => {
+                logger.error(req, cmd + '|Error while update upload status|' + dberr)
+                return resp.getInternalError(req, res, cmd, dberr)
             })
-            resp.getSuccess(req, res, cmd)
         } catch (err) {
             logger.error(req, cmd + '|' + err);
             return resp.getInternalError(req, res, cmd, err);
         }
+    },
+    distinctDocType:(req, res) => {
+        let cmd='distinctObjective'
+        let rawQ='select distinct doc_type as docType from dbo.document where doc_type is not null'
+        mCfg.sequelize.query(rawQ, {type:mCfg.sequelize.QueryTypes.SELECT})
+          .then((dbs) => {
+            logger.info(req,cmd+'|SQL:'+rawQ+'|DBs:'+ util.jsonToText(dbs))
+            if(util.isDataFound(dbs)) resp.getSuccess(req,res,cmd,dbs)
+            else{
+                logger.summary(req, cmd + '|' + error.desc_01003)
+                res.json(resp.getJsonError(error.code_01003, error.desc_01003))
+            }
+          }).catch((err) => {
+            logger.error(req,cmd+'|'+err)
+            logger.summary(req, cmd + '|' + error.desc_01003)
+            res.json(resp.getJsonError(error.code_01003, error.desc_01003))
+          })
     }
 }
 module.exports = document

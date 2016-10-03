@@ -74,7 +74,7 @@ exports.getEmployeeAndManager=(req,res) => {
   let cmd = 'getManager'
   try{
     if(req.header('x-userTokenId')){
-      ext.omGetEmployeeAndMgrByUser(req).then(om=>{
+      ext.omListAllApprover(req).then(om=>{
         logger.debug(req,cmd+'|'+util.jsonToText(om))
         resp.getSuccess(req,res,cmd,om)
       }).catch(err=>{

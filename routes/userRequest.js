@@ -141,7 +141,7 @@ const userRequest = {
                                     logger.summary(req, cmd + '|' + oerr.desc)
                                     callback(oerr, 'Error when call OM')
                                 })
-                            } else callback(null, 'not insert VP')
+                            } else callback(null, 'normal route')
                         }, (callback) => { // add workflow => config.adminDepartment = 'Admin Team' (front send this)
                             cmd = 'createWorkflow'
                             mUrWf.create(req.body.requestData).then((succeed) => {

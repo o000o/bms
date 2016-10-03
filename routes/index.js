@@ -95,6 +95,7 @@ router.post('/assignLocation', assignLocation.add)
 // Document
 // ============================================================================
 router.get('/document/download', document.archivDownload)
+router.get('/document/docType', document.distinctDocType)
 router.post('/document', document.add)
 router.delete('/document/:documentId', document.delete)
 router.post('/getDocument', document.queryByCriteria)
